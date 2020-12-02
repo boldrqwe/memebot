@@ -24,12 +24,12 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
-    <repositories>
-        <repository>
-            <id>google-api-services</id>
-            <url>http://google-api-client-libraries.appspot.com/mavenrepo</url>
-        </repository>
-    </repositories>
+<!--    <repositories>-->
+<!--        <repository>-->
+<!--            <id>google-api-services</id>-->
+<!--            <url>http://google-api-client-libraries.appspot.com/mavenrepo</url>-->
+<!--        </repository>-->
+<!--    </repositories>-->
 
     <dependencies>
         <dependency>
@@ -37,11 +37,22 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-            <dependency>
-                <groupId>com.google.api-client</groupId>
-                <artifactId>google-api-client</artifactId>
-                <version>1.31.1</version>
-            </dependency>
+<!--            <dependency>-->
+<!--                <groupId>com.google.api-client</groupId>-->
+<!--                <artifactId>google-api-client</artifactId>-->
+<!--                <version>1.31.1</version>-->
+<!--            </dependency>-->
+        <!-- https://mvnrepository.com/artifact/com.google.guava/guava -->
+<!--        <dependency>-->
+<!--            <groupId>com.google.guava</groupId>-->
+<!--            <artifactId>guava</artifactId>-->
+<!--            <version>30.0-jre</version>-->
+<!--        </dependency>-->
+        <dependency>
+            <groupId>com.google.api-client</groupId>
+            <artifactId>google-api-client</artifactId>
+            <version>1.30.10</version>
+        </dependency>
 
 
 
@@ -55,39 +66,39 @@
             <artifactId>telegrambots-spring-boot-starter</artifactId>
             <version>5.0.1</version>
         </dependency>
-        <!-- YouTube Data V3 support -->
+
         <dependency>
             <groupId>com.google.apis</groupId>
             <artifactId>google-api-services-youtube</artifactId>
             <version>${project.youtube.version}</version>
         </dependency>
 
-        <!-- Required for any code that makes calls to the YouTube Analytics API -->
-        <dependency>
-            <groupId>com.google.apis</groupId>
-            <artifactId>google-api-services-youtubeAnalytics</artifactId>
-            <version>${project.youtube.analytics.version}</version>
-        </dependency>
+<!--        &lt;!&ndash; Required for any code that makes calls to the YouTube Analytics API &ndash;&gt;-->
+<!--        <dependency>-->
+<!--            <groupId>com.google.apis</groupId>-->
+<!--            <artifactId>google-api-services-youtubeAnalytics</artifactId>-->
+<!--            <version>${project.youtube.analytics.version}</version>-->
+<!--        </dependency>-->
 
-        <!-- Required for any code that makes calls to the YouTube Reporting API -->
-        <dependency>
-            <groupId>com.google.apis</groupId>
-            <artifactId>google-api-services-youtubereporting</artifactId>
-            <version>${project.youtube.reporting.version}</version>
-        </dependency>
+<!--        &lt;!&ndash; Required for any code that makes calls to the YouTube Reporting API &ndash;&gt;-->
+<!--        <dependency>-->
+<!--            <groupId>com.google.apis</groupId>-->
+<!--            <artifactId>google-api-services-youtubereporting</artifactId>-->
+<!--            <version>${project.youtube.reporting.version}</version>-->
+<!--        </dependency>-->
 
         <!-- This dependency is only used for the Topics API sample, which requires the Jackson JSON parser -->
-        <dependency>
-            <groupId>org.codehaus.jackson</groupId>
-            <artifactId>jackson-mapper-asl</artifactId>
-            <version>1.9.4</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.codehaus.jackson</groupId>-->
+<!--            <artifactId>jackson-mapper-asl</artifactId>-->
+<!--            <version>1.9.4</version>-->
+<!--        </dependency>-->
 
-        <dependency>
-            <groupId>com.google.http-client</groupId>
-            <artifactId>google-http-client-jackson2</artifactId>
-            <version>${project.http.version}</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>com.google.http-client</groupId>-->
+<!--            <artifactId>google-http-client-jackson2</artifactId>-->
+<!--            <version>${project.http.version}</version>-->
+<!--        </dependency>-->
 
         <dependency>
             <groupId>com.google.oauth-client</groupId>
@@ -95,11 +106,11 @@
             <version>${project.oauth.version}</version>
         </dependency>
 
-        <dependency>
-            <groupId>com.google.collections</groupId>
-            <artifactId>google-collections</artifactId>
-            <version>1.0</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>com.google.collections</groupId>-->
+<!--            <artifactId>google-collections</artifactId>-->
+<!--            <version>1.0</version>-->
+<!--        </dependency>-->
     </dependencies>
 
     <build>

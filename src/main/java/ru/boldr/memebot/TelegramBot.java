@@ -11,6 +11,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import ru.boldr.memebot.handlers.UpdateHandler;
+import ru.boldr.memebot.helpers.JsonHelper;
 
 import java.util.Objects;
 
@@ -21,11 +22,11 @@ public class TelegramBot extends TelegramLongPollingBot {
 
 
 
-    private final ObjectMapper objectMapper;
+    private final JsonHelper jsonHelper;
 
 
-    public TelegramBot(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
+    public TelegramBot(JsonHelper jsonHelper) {
+        this.jsonHelper = jsonHelper;
     }
 
 
@@ -42,13 +43,8 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     @Override
     public void onUpdateReceived(Update update) {
-        String formattedUpdate;
-        try {
-            formattedUpdate = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(update);
-        } catch (JsonProcessingException e) {
-           throw new RuntimeException(e);
-        }
-        logger.info("new update: {}", formattedUpdate);
+
+        logger.info("new update: {}", jsonHelper.lineToMap(update));
         if (!update.hasMessage()){
             logger.warn("massage is empty");
             return;

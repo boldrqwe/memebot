@@ -12,12 +12,8 @@ import java.util.Arrays;
 
 @SpringBootApplication
 public class MemebotApplication  {
-
     public static void main(String[] args) {
         SpringApplication.run(MemebotApplication.class, args);
     }
-
-
-
     }
 
