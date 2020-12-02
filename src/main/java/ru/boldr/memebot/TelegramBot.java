@@ -10,6 +10,7 @@ import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import ru.boldr.memebot.handlers.UpdateHandler;
 
 import java.util.Objects;
 
@@ -53,7 +54,10 @@ public class TelegramBot extends TelegramLongPollingBot {
             return;
         }
         try {
-            execute(new SendMessage(update.getMessage().getChatId().toString(),update.getMessage().getText()));
+            UpdateHandler updateHandler = new UpdateHandler(update);
+            String answer = updateHandler.readAndReturnStr();
+            execute(new SendMessage(update.getMessage().getChatId().toString(),answer));
+
         } catch (TelegramApiException e) {
             logger.error(e.getMessage(), e);
             return;
