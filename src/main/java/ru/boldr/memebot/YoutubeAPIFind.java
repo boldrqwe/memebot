@@ -17,6 +17,7 @@ import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.SearchListResponse;
+import com.google.api.services.youtube.model.SearchResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -29,9 +30,10 @@ import java.io.InputStreamReader;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 @Component
-public class ApiExample {
+public class YoutubeAPIFind {
     private static final String CLIENT_SECRETS = "/client_secret.json";
     private static final Collection<String> SCOPES =
             Arrays.asList("https://www.googleapis.com/auth/youtube " +
@@ -41,12 +43,13 @@ public class ApiExample {
 
     private static final String APPLICATION_NAME = "API code samples";
     private static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
-    private final static Logger logger = LoggerFactory.getLogger(ApiExample.class);
+    private final static Logger logger = LoggerFactory.getLogger(YoutubeAPIFind.class);
 
-
+    private YouTube youtubeService;
     private final JsonHelper jsonHelper;
+    YouTube.Search.List request;
 
-    public ApiExample(JsonHelper jsonHelper) {
+    public YoutubeAPIFind(JsonHelper jsonHelper) {
         this.jsonHelper = jsonHelper;
     }
 
@@ -58,7 +61,7 @@ public class ApiExample {
      */
     public static Credential authorize(final NetHttpTransport httpTransport) throws IOException {
         // Load client secrets.
-        InputStream in = ApiExample.class.getResourceAsStream(CLIENT_SECRETS);
+        InputStream in = YoutubeAPIFind.class.getResourceAsStream(CLIENT_SECRETS);
         GoogleClientSecrets clientSecrets =
                 GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
         // Build flow and trigger user authorization request.
@@ -90,14 +93,29 @@ public class ApiExample {
      *
      * @throws GeneralSecurityException, IOException, GoogleJsonResponseException
      */
+
+
     @PostConstruct
     public void init()
             throws GeneralSecurityException, IOException, GoogleJsonResponseException {
-        YouTube youtubeService = getService();
-        // Define and execute the API request
-        YouTube.Search.List request = youtubeService.search()
-                .list("snippet");
-        SearchListResponse response = request.setQ("java").execute();
-        logger.info("new update: {}", jsonHelper.lineToMap(response));
+         this.youtubeService = getService();
+    }
+    public String find(String query) {
+
+        SearchListResponse response = null;
+        try {
+
+            // Define and execute the API request
+            request = this.youtubeService.search()
+                    .list("snippet");
+            response = request.setQ(query).execute();
+            logger.info("new update: {}", jsonHelper.lineToMap(response));
+            List<SearchResult> searchResultList = response.getItems();
+            SearchResult searchResult = searchResultList.get(0);
+            String result = searchResult.getId().getVideoId();
+            return result;
+        } catch (IOException exception) {
+            throw new RuntimeException(exception);
+        }
     }
 }
