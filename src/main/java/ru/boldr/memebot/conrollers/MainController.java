@@ -18,15 +18,9 @@ public class MainController {
         return "hello World";
     }
 
-    @PostMapping(path = "/image")
-    public MemeBotResponse image(@RequestParam String imgUrl) {
-        return new MemeBotResponse(imgUrl,true);
-    }
 
-    @PostMapping(path = "/sound")
-    public MemeBotResponse sound(@RequestParam String soundUrl) {
-       return new MemeBotResponse(soundUrl,true);
-    }
+
+
 
 
 }

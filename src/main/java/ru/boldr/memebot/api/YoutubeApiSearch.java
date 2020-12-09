@@ -1,4 +1,4 @@
-package ru.boldr.memebot;
+package ru.boldr.memebot.api;
 /**
  * Sample Java code for youtube.search.list
  * See instructions for running these code samples locally:
@@ -31,9 +31,10 @@ import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 @Component
-public class YoutubeAPIFind {
+public class YoutubeApiSearch {
     private static final String CLIENT_SECRETS = "/client_secret.json";
     private static final Collection<String> SCOPES =
             Arrays.asList("https://www.googleapis.com/auth/youtube " +
@@ -43,25 +44,19 @@ public class YoutubeAPIFind {
 
     private static final String APPLICATION_NAME = "API code samples";
     private static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
-    private final static Logger logger = LoggerFactory.getLogger(YoutubeAPIFind.class);
+    private final static Logger logger = LoggerFactory.getLogger(YoutubeApiSearch.class);
 
     private YouTube youtubeService;
     private final JsonHelper jsonHelper;
     YouTube.Search.List request;
 
-    public YoutubeAPIFind(JsonHelper jsonHelper) {
+    public YoutubeApiSearch(JsonHelper jsonHelper) {
         this.jsonHelper = jsonHelper;
     }
 
-    /**
-     * Create an authorized Credential object.
-     *
-     * @return an authorized Credential object.
-     * @throws IOException
-     */
     public static Credential authorize(final NetHttpTransport httpTransport) throws IOException {
         // Load client secrets.
-        InputStream in = YoutubeAPIFind.class.getResourceAsStream(CLIENT_SECRETS);
+        InputStream in = YoutubeApiSearch.class.getResourceAsStream(CLIENT_SECRETS);
         GoogleClientSecrets clientSecrets =
                 GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
         // Build flow and trigger user authorization request.
@@ -73,12 +68,6 @@ public class YoutubeAPIFind {
         return credential;
     }
 
-    /**
-     * Build and return an authorized API client service.
-     *
-     * @return an authorized API client service
-     * @throws GeneralSecurityException, IOException
-     */
     public static YouTube getService() throws GeneralSecurityException, IOException {
         final NetHttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
         Credential credential = authorize(httpTransport);
@@ -87,32 +76,28 @@ public class YoutubeAPIFind {
                 .build();
     }
 
-    /**
-     * Call function to create API service object. Define and
-     * execute API request. Print API response.
-     *
-     * @throws GeneralSecurityException, IOException, GoogleJsonResponseException
-     */
+//    @PostConstruct
+//    public void init()
+//            throws GeneralSecurityException, IOException, GoogleJsonResponseException {
+//        this.youtubeService = getService();
+//    }
 
-
-    @PostConstruct
-    public void init()
-            throws GeneralSecurityException, IOException, GoogleJsonResponseException {
-         this.youtubeService = getService();
-    }
     public String find(String query) {
 
         SearchListResponse response = null;
         try {
-
-            // Define and execute the API request
             request = this.youtubeService.search()
                     .list("snippet");
             response = request.setQ(query).execute();
             logger.info("new update: {}", jsonHelper.lineToMap(response));
             List<SearchResult> searchResultList = response.getItems();
-            SearchResult searchResult = searchResultList.get(0);
-            String result = searchResult.getId().getVideoId();
+            String result = "";
+            for (int i = 0; i < searchResultList.size(); i++) {
+                SearchResult searchResult = searchResultList.get(0 + i);
+                if (!Objects.equals(searchResult, null)) {
+                    result = searchResult.getId().getVideoId();
+                }
+            }
             return result;
         } catch (IOException exception) {
             throw new RuntimeException(exception);
