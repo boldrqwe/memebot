@@ -39,12 +39,15 @@ public class TelegramBot extends TelegramLongPollingBot {
     public void onUpdateReceived(Update update) {
 
         logger.info("new update: {}", jsonHelper.lineToMap(update));
-        if (!update.hasMessage()){
+        if (!update.hasMessage()) {
             logger.warn("massage is empty");
             return;
         }
         try {
-            execute(new SendMessage(update.getMessage().getChatId().toString(),updateHandler.answer(update)));
+            String answer = updateHandler.saveFunnyJoke(update);
+            if (answer != null) {
+                execute(new SendMessage(update.getMessage().getChatId().toString(), answer));
+            }
         } catch (TelegramApiException e) {
             logger.error(e.getMessage(), e);
             return;
