@@ -23,19 +23,5 @@ public class JsonHelper {
 
     }
 
-    public String videoId(Object object) {
-        String[] tokens = null;
-        try {
-            tokens = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(object).split(" ");
 
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-        }
-        for (int i = 0; i < tokens.length; i++) {
-            if (tokens[i].contains("videoId")) {
-                return tokens[i + 2];
-            }
-        }
-        return null;
-    }
 }
