@@ -24,8 +24,6 @@ public class UpdateHandler {
             "проиграл", "зачет", "аха", "аза", "прикольно");
 
 
-
-
     public String answer(Update update) {
         return null;
     }
@@ -33,6 +31,10 @@ public class UpdateHandler {
     public String saveFunnyJoke(Update update) {
         Message replyToMessage = update.getMessage().getReplyToMessage();
         if (replyToMessage == null) {
+            return null;
+        }
+
+        if (update.getMessage().getFrom().getId().equals(replyToMessage.getFrom().getId())) {
             return null;
         }
 
@@ -73,8 +75,8 @@ public class UpdateHandler {
 
         scores.append("scores: \n");
 
-        for (String username: usernameToScore.keySet()) {
-          scores.append(username).append(": ").append(usernameToScore.get(username)).append("\n");
+        for (String username : usernameToScore.keySet()) {
+            scores.append(username).append(": ").append(usernameToScore.get(username)).append("\n");
         }
 
         return scores.toString();
@@ -87,6 +89,7 @@ public class UpdateHandler {
         text = text.replace("?", "");
         String[] words = text.split(" ");
         for (String word : words) {
+            word = word.toLowerCase();
             if (coolWord(word)) {
                 return true;
             }
