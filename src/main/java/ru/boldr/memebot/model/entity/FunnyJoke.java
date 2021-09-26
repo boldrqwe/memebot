@@ -10,6 +10,7 @@ import javax.persistence.*;
 @Setter
 @Builder
 @Entity
+@ToString
 @Table(name = "funny_joke")
 public class FunnyJoke {
 

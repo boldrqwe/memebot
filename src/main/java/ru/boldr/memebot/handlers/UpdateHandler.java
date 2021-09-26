@@ -31,8 +31,13 @@ public class UpdateHandler {
     }
 
     public String saveFunnyJoke(Update update) {
+
         Message replyToMessage = update.getMessage().getReplyToMessage();
         if (replyToMessage == null) {
+            return null;
+        }
+
+        if (update.getMessage().getFrom().getId().equals(replyToMessage.getFrom().getId())){
             return null;
         }
 
@@ -51,6 +56,7 @@ public class UpdateHandler {
                 .build();
 
         funnyJokeRepo.save(funnyJoke);
+        log.info("save: {}", funnyJoke);
         return getStats(funnyJoke.getChatId());
     }
 
@@ -87,6 +93,7 @@ public class UpdateHandler {
         text = text.replace("?", "");
         String[] words = text.split(" ");
         for (String word : words) {
+            word = word.toLowerCase();
             if (coolWord(word)) {
                 return true;
             }
