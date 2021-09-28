@@ -5,23 +5,19 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import ru.boldr.memebot.model.Command;
 import ru.boldr.memebot.model.entity.FunnyJoke;
-import ru.boldr.memebot.repository.FunnyJokeRepo;
+import ru.boldr.memebot.service.JokeService;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import static ru.boldr.memebot.model.Command.*;
 
 @Component
 @AllArgsConstructor
 @Slf4j
 public class UpdateHandler {
 
-    private final FunnyJokeRepo funnyJokeRepo;
 
-    private final static Set<String> coolSet = Set.of("збс", "заебис", "хорошо", "охуено", "отлично", "замечательно", "офигено", "прекрасно",
-            "проиграл", "зачет", "аха", "аза", "прикольно");
+    private final JokeService jokeService;
 
 
     public String answer(Update update) {
@@ -29,82 +25,34 @@ public class UpdateHandler {
     }
 
     public String saveFunnyJoke(Update update) {
-        Message replyToMessage = update.getMessage().getReplyToMessage();
-        if (replyToMessage == null) {
+        FunnyJoke funnyJoke = jokeService.saveFunnyJoke(update);
+        if (funnyJoke == null) {
             return null;
         }
-
-        if (update.getMessage().getFrom().getId().equals(replyToMessage.getFrom().getId())) {
-            return null;
-        }
-
-        log.info("reply is {}", replyToMessage.getText());
-        boolean isJoke = isJoke(update.getMessage().getText());
-        if (!isJoke) {
-            return null;
-        }
-
-        FunnyJoke funnyJoke = FunnyJoke.builder()
-                .userId(replyToMessage.getFrom().getId())
-                .chatId(replyToMessage.getChatId())
-                .messageId(replyToMessage.getMessageId())
-                .username(replyToMessage.getFrom().getUserName())
-                .text(replyToMessage.getText())
-                .build();
-
-        funnyJokeRepo.save(funnyJoke);
-        return getStats(funnyJoke.getChatId());
+        return jokeService.getStats(funnyJoke.getChatId());
     }
 
-    private String getStats(Long chatId) {
-        List<FunnyJoke> funnyJokes = funnyJokeRepo.findAllByChatId(chatId);
+    public boolean checkWriteMessagePermission(Message message) {
+        String text = message.getText();
 
-        Map<String, Long> usernameToScore = new HashMap<>();
-
-        for (FunnyJoke joke : funnyJokes) {
-            String username = joke.getUsername();
-            if (usernameToScore.get(username) == null) {
-                usernameToScore.put(username, 1L);
-            } else {
-                Long score = usernameToScore.get(username);
-                usernameToScore.put(username, score + 1L);
-            }
+        if (START.getCommand().equals(text) || STOP.getCommand().equals(text)) {
+            boolean permission = text.equals(START.getCommand());
+            jokeService.savePermission(message, permission);
+            return permission;
         }
 
-        StringBuilder scores = new StringBuilder();
-
-        scores.append("scores: \n");
-
-        for (String username : usernameToScore.keySet()) {
-            scores.append(username).append(": ").append(usernameToScore.get(username)).append("\n");
-        }
-
-        return scores.toString();
-    }
-
-    private boolean isJoke(String text) {
-        text = text.replace(",", "");
-        text = text.replace(".", "");
-        text = text.replace("!", "");
-        text = text.replace("?", "");
-        String[] words = text.split(" ");
-        for (String word : words) {
-            word = word.toLowerCase();
-            if (coolWord(word)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean coolWord(String word) {
-        for (String cool : coolSet) {
-            if (word.contains(cool)) {
-                return true;
-            }
-        }
-        return false;
+        return jokeService.checkWriteMessagePermission(message.getChatId());
     }
 
 
+    public Command executeCommand(Update update) {
+        if (update.getMessage().getText().equals(MAN.getCommand())) {
+            return MAN;
+        }
+
+        if (update.getMessage().getText().equals(MAN_REVERSE.getCommand())) {
+            return MAN_REVERSE;
+        }
+        return null;
+    }
 }
