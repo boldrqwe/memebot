@@ -1,5 +1,6 @@
 package ru.boldr.memebot;
 
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -12,21 +13,18 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import ru.boldr.memebot.handlers.UpdateHandler;
 import ru.boldr.memebot.helpers.JsonHelper;
 import ru.boldr.memebot.model.Command;
+import ru.boldr.memebot.service.ParserService;
 
 import java.io.File;
 
 @Component
+@RequiredArgsConstructor
 public class TelegramBot extends TelegramLongPollingBot {
 
     private final static Logger logger = LoggerFactory.getLogger(TelegramBot.class);
     private final JsonHelper jsonHelper;
     private final UpdateHandler updateHandler;
-
-
-    public TelegramBot(JsonHelper jsonHelper, UpdateHandler updateHandler) {
-        this.jsonHelper = jsonHelper;
-        this.updateHandler = updateHandler;
-    }
+    private final ParserService parserService;
 
 
     @Override
@@ -48,6 +46,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             logger.warn("massage is empty");
             return;
         }
+        parserService.getPicture();
         if (!updateHandler.checkWriteMessagePermission(update.getMessage())) {
             return;
         }

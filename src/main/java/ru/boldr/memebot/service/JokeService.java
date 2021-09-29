@@ -1,10 +1,13 @@
 package ru.boldr.memebot.service;
 
+import javassist.runtime.Desc;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import one.util.streamex.StreamEx;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.User;
 import ru.boldr.memebot.model.entity.ChatPermission;
 import ru.boldr.memebot.model.entity.FunnyJoke;
 import ru.boldr.memebot.repository.ChatPermissionRepo;
@@ -47,6 +50,7 @@ public class JokeService {
                 .build());
     }
 
+    @SuppressWarnings("all")
     public FunnyJoke saveFunnyJoke(Update update) {
         Message replyToMessage = update.getMessage().getReplyToMessage();
         if (replyToMessage == null) {
@@ -57,17 +61,23 @@ public class JokeService {
             return null;
         }
 
+        if (update.getMessage().getFrom().getIsBot()) {
+            return null;
+        }
+
         log.info("reply is {}", replyToMessage.getText());
         boolean isJoke = isJoke(update.getMessage().getText());
         if (!isJoke) {
             return null;
         }
-
+        User from = replyToMessage.getFrom();
+        String firstName = from.getFirstName() == null ? "" : from.getFirstName();
+        String lastName = from.getLastName() == null ? "" : from.getLastName();
         FunnyJoke funnyJoke = FunnyJoke.builder()
-                .userId(replyToMessage.getFrom().getId())
+                .userId(from.getId())
                 .chatId(replyToMessage.getChatId())
                 .messageId(replyToMessage.getMessageId())
-                .username(replyToMessage.getFrom().getUserName())
+                .username(firstName + " " + lastName)
                 .text(replyToMessage.getText())
                 .build();
 
@@ -76,29 +86,16 @@ public class JokeService {
     }
 
     public String getStats(Long chatId) {
-        List<FunnyJoke> funnyJokes = funnyJokeRepo.findAllByChatId(chatId);
-
-        Map<String, Long> usernameToScore = new HashMap<>();
-
-        for (FunnyJoke joke : funnyJokes) {
-            String username = joke.getUsername();
-            if (usernameToScore.get(username) == null) {
-                usernameToScore.put(username, 1L);
-            } else {
-                Long score = usernameToScore.get(username);
-                usernameToScore.put(username, score + 1L);
-            }
+        List<FunnyJokeRepo.JokeItem> stats = funnyJokeRepo.getStats(chatId);
+        List<FunnyJokeRepo.JokeItem> jokeItems = StreamEx.of(stats)
+                .reverseSorted(Comparator.comparing(FunnyJokeRepo.JokeItem::getCount)).toList();
+        List<String> strings = StreamEx.of(jokeItems).map(j -> j.getUsername() + ": " + j.getCount() + "\n").toList();
+        String result = "";
+        int count = 1;
+        for (String st : strings) {
+            result = result + count++ + ")" + st;
         }
-
-        StringBuilder scores = new StringBuilder();
-
-        scores.append("scores: \n");
-
-        for (String username : usernameToScore.keySet()) {
-            scores.append(username).append(": ").append(usernameToScore.get(username)).append("\n");
-        }
-
-        return scores.toString();
+        return result;
     }
 
     private boolean isJoke(String text) {
