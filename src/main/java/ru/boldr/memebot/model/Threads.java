@@ -1,4 +1,4 @@
-package ru.boldr.memebot.service;
+package ru.boldr.memebot.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
