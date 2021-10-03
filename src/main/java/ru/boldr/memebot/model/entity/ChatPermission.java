@@ -4,6 +4,7 @@ import lombok.*;
 
 import javax.persistence.*;
 
+
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
@@ -11,7 +12,7 @@ import javax.persistence.*;
 @Builder
 @Entity
 @Table(name = "chat_permission")
-public class ChatPermission {
+public class ChatPermission    {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

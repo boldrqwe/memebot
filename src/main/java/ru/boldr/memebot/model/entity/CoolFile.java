@@ -10,16 +10,15 @@ import javax.persistence.*;
 @Setter
 @Builder
 @Entity
-@Table(name = "harkachfile_history")
-public class HarKachFileHistory {
+@Table(name = "cool_file")
+public class CoolFile {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
-    @Column(name = "chat_id")
-    String chatId;
-
     @Column(name = "file_name")
     String fileName;
+
+
 }

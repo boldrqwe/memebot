@@ -10,8 +10,8 @@ import javax.persistence.*;
 @Setter
 @Builder
 @Entity
-@Table(name = "harkachfile_history")
-public class HarKachFileHistory {
+@Table(name = "bot_message_history")
+public class BotMassageHistory {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,6 +20,6 @@ public class HarKachFileHistory {
     @Column(name = "chat_id")
     String chatId;
 
-    @Column(name = "file_name")
-    String fileName;
+    @Column(name = "message_id")
+    Integer messageId;
 }
