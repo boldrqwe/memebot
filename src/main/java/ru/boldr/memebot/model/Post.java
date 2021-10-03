@@ -12,6 +12,8 @@ public record Post(
         @JsonProperty("files")
         List<ThreadFile> files,
         @JsonProperty("parent")
-        Long parent
+        Long parent,
+        @JsonProperty("num")
+        Long num
 ) {
 }

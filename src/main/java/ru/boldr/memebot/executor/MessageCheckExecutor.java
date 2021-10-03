@@ -12,12 +12,12 @@ import ru.boldr.memebot.TelegramBot;
 @RequiredArgsConstructor
 public class MessageCheckExecutor {
 
-    private final TelegramBot telegramBot;
-
-    @Scheduled(cron = "0/10 * * ? * *")
-    public void checkMessages() throws TelegramApiException {
-        log.info("синхронизирую сообщения");
-        telegramBot.checkMessages();
-    }
+//    private final TelegramBot telegramBot;
+//
+//    @Scheduled(cron = "0/10 * * ? * *")
+//    public void checkMessages() throws TelegramApiException {
+//        log.info("синхронизирую сообщения");
+//        telegramBot.checkMessages();
+//    }
 
 }

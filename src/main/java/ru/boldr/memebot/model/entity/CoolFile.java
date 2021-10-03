@@ -4,23 +4,21 @@ import lombok.*;
 
 import javax.persistence.*;
 
-
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Setter
 @Builder
 @Entity
-@Table(name = "chat_permission")
-public class ChatPermission    {
+@Table(name = "cool_file")
+public class CoolFile {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
-    @Column(name = "chat_id")
-    Long chatId;
+    @Column(name = "file_name")
+    String fileName;
 
-    @Column(name = "permission")
-    Boolean permission;
+
 }

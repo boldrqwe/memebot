@@ -19,11 +19,6 @@ public class UpdateHandler {
 
     private final JokeService jokeService;
 
-
-    public String answer(Update update) {
-        return null;
-    }
-
     public String saveFunnyJoke(Update update) {
         FunnyJoke funnyJoke = jokeService.saveFunnyJoke(update);
         if (funnyJoke == null) {
@@ -44,27 +39,4 @@ public class UpdateHandler {
         return jokeService.checkWriteMessagePermission(message.getChatId());
     }
 
-
-    public Command executeCommand(Update update) {
-        if (update.getMessage().getText().equals(MAN.getCommand())) {
-            return MAN;
-        }
-
-        if (update.getMessage().getText().equals(MAN_REVERSE.getCommand())) {
-            return MAN_REVERSE;
-        }
-
-        if (update.getMessage().getText().equals(KAKASHKULES.getCommand())) {
-            return KAKASHKULES;
-        }
-
-        if (update.getMessage().getText().equals(BURGERTRACH.getCommand())) {
-            return BURGERTRACH;
-        }
-
-        if (update.getMessage().getText().equals(HARKACH.getCommand())) {
-            return HARKACH;
-        }
-        return null;
-    }
 }
