@@ -53,6 +53,18 @@ public class UpdateHandler {
         if (update.getMessage().getText().equals(MAN_REVERSE.getCommand())) {
             return MAN_REVERSE;
         }
+
+        if (update.getMessage().getText().equals(KAKASHKULES.getCommand())) {
+            return KAKASHKULES;
+        }
+
+        if (update.getMessage().getText().equals(BURGERTRACH.getCommand())) {
+            return BURGERTRACH;
+        }
+
+        if (update.getMessage().getText().equals(HARKACH.getCommand())) {
+            return HARKACH;
+        }
         return null;
     }
 }

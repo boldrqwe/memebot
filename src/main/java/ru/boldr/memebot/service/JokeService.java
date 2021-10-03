@@ -21,7 +21,7 @@ import java.util.*;
 public class JokeService {
 
 
-    private final static Set<String> coolSet = Set.of("збс", "заебис", "хорошо", "охуено", "отлично", "замечательно",
+    public final static Set<String> coolSet = Set.of("збс", "заебис", "хорошо", "охуено", "отлично", "замечательно",
             "офигено", "прекрасно", "проиграл", "зачет", "аха", "аза", "прикольно", "лол", "смешно", "+");
     private final FunnyJokeRepo funnyJokeRepo;
     private final ChatPermissionRepo chatPermissionRepo;
