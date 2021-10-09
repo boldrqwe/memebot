@@ -19,4 +19,7 @@ public class HarkachSynchronisationExecutor {
         harkachParserService.getPictures();
         log.info("сохранил файлы");
     }
+
+
+
 }

@@ -7,25 +7,21 @@ import org.hibernate.annotations.UpdateTimestamp;
 import javax.persistence.*;
 import java.time.LocalDateTime;
 
-
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Setter
 @Builder
 @Entity
-@Table(name = "chat_permission")
-public class ChatPermission    {
+@Table(name = "harkach_mod_history")
+public class HarkachModHistory {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
     @Column(name = "chat_id")
-    Long chatId;
-
-    @Column(name = "permission")
-    Boolean permission;
+    String chatId;
 
     @Column(name = "create_time")
     @CreationTimestamp

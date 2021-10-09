@@ -19,24 +19,20 @@ import ru.boldr.memebot.model.entity.HarKachFileHistory;
 import ru.boldr.memebot.repository.CoolPostRepo;
 import ru.boldr.memebot.repository.HarkachFileHistoryRepo;
 
+import javax.transaction.Transactional;
+
 @Component
 @Slf4j
 @AllArgsConstructor
+@Transactional
 public class HarkachParserService {
 
     private final static String MAIN_URL = "https://2ch.hk/b/threads.json";
 
     private final static String THREAD_URL = "https://2ch.hk/b/res/";
 
-    private final static String HREAF_PATTERN = "href=\\\"/b/res/\\d+.html#\\d+\\\\";
-
-    private final static String HREAF_PATTERN2 = "<a \\w+=\\\\\"/b/res/\\d+.html#\\d+\\\\\" class=\\\\\"post-reply-link\\\\\" data-thread=\\\\\"\\d+\\\\\" data-num=\\\\\"\\d+\\\\\">>>\\d+ ";
-
-    private final static Set<String> funnyMap = Set.of("засмеялся", "зазмеился", "обосрался", "продристался", "WEBM",
-            "ЦУИЬ",
-            "ШЕБМ");
-
-    public final static Set<String> coolSet = Set.of("збс", "заебис", "проиграл", "зачет", "прикольно", "лол", "смешно", "орнул", "вголосину");
+    public final static Set<String> coolSet = Set.of("проиграл", " лол ", "смешно", "орнул", "вголосину",
+            "обосрался", "подливой", "рофл", "lol");
 
 
     private final RestTemplate restTemplate = new RestTemplate();
@@ -52,8 +48,7 @@ public class HarkachParserService {
         List<String> history = harkachFileHistoryRepo.findAllByChatId(chatId)
                 .stream().map(HarKachFileHistory::getFileName).collect(Collectors.toList());
 
-
-        List<CoolFile> coolFiles1 = StreamEx.of(coolFiles).filter(cf ->!history.contains(cf.getFileName())).toList();
+        List<CoolFile> coolFiles1 = StreamEx.of(coolFiles).filter(cf -> !history.contains(cf.getFileName())).toList();
         Optional<CoolFile> first = coolFiles1.stream().findFirst();
 
         String fileName;
@@ -83,15 +78,6 @@ public class HarkachParserService {
         return restTemplate.getForObject(uri, CurrentThread.class);
     }
 
-    private boolean findFunnyThread(Thread thread) {
-        for (String st : funnyMap) {
-            if (thread.comment().contains(st)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     public void getPictures() {
         List<CurrentThread> currentThreads = getCurrentThreads();
         List<Post> posts = getPosts(currentThreads);
@@ -105,15 +91,17 @@ public class HarkachParserService {
             }
 
             for (String cool : coolSet) {
-                if (post.comment().contains(cool)) {
+                if (post.comment().toLowerCase(Locale.ROOT).contains(cool)) {
                     threadFiles.addAll(getFunnyFiles(numToPost, post));
                 }
             }
         }
 
-        coolPostRepo.deleteAllByFileNameIn(StreamEx.of(threadFiles).map(ThreadFile::path).toList());
+        Set<ThreadFile> threadFileSet = StreamEx.of(threadFiles).toSet();
 
-        coolPostRepo.saveAll(StreamEx.of(threadFiles).map(this::toCoolFile).toList());
+        coolPostRepo.deleteAllByFileNameIn(StreamEx.of(threadFileSet).map(ThreadFile::path).toList());
+
+        coolPostRepo.saveAll(StreamEx.of(threadFileSet).map(this::toCoolFile).toList());
     }
 
     private List<ThreadFile> getFunnyFiles(Map<Long, Post> numToPost, Post post) {
@@ -156,6 +144,6 @@ public class HarkachParserService {
 
 
         assert threads != null;
-        return (List<CurrentThread>) StreamEx.of(threads.threads()).map(this::getCurrentThread).toList();
+        return StreamEx.of(threads.threads()).map(this::getCurrentThread).toList();
     }
 }

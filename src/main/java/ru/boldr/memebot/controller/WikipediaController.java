@@ -2,7 +2,6 @@ package ru.boldr.memebot.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 import ru.boldr.memebot.service.WikiParser;
 
@@ -12,11 +11,10 @@ public class WikipediaController {
 
     private final WikiParser wikiParser;
 
-    @GetMapping("/{name}")
+    @GetMapping()
     public String getWikiPage(
-            @PathVariable("name") String name
     ) {
-        return wikiParser.getPage(name);
+        return wikiParser.getPage("какашкулес.html");
     }
 
 }

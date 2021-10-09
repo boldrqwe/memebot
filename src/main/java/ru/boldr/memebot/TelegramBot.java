@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendAnimation;
 import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
@@ -19,10 +20,13 @@ import ru.boldr.memebot.handlers.UpdateHandler;
 import ru.boldr.memebot.helpers.JsonHelper;
 import ru.boldr.memebot.model.Command;
 import ru.boldr.memebot.model.entity.BotMassageHistory;
+import ru.boldr.memebot.model.entity.HarkachModHistory;
+import ru.boldr.memebot.repository.HarkachModHistoryRepo;
 import ru.boldr.memebot.service.HarkachParserService;
 import ru.boldr.memebot.service.MassageHistoryService;
 import ru.boldr.memebot.service.WikiParser;
 
+import javax.transaction.Transactional;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -33,6 +37,7 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+
 public class TelegramBot extends TelegramLongPollingBot {
 
     private final static Logger logger = LoggerFactory.getLogger(TelegramBot.class);
@@ -41,6 +46,8 @@ public class TelegramBot extends TelegramLongPollingBot {
     private final HarkachParserService harkachParserService;
     private final WikiParser wikiparser;
     private final MassageHistoryService massageHistoryService;
+    private final HarkachModHistoryRepo harkachModHistoryRepo;
+    private final TransactionTemplate transactionTemplate;
 
 
     @Override
@@ -63,6 +70,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             return;
         }
 
+
         if (!updateHandler.checkWriteMessagePermission(update.getMessage())) {
             return;
         }
@@ -73,6 +81,11 @@ public class TelegramBot extends TelegramLongPollingBot {
             String answer = updateHandler.saveFunnyJoke(update);
             if (answer != null) {
                 execute(new SendMessage(chatId, answer));
+            }
+
+            if (update.getMessage().getText() == null) {
+                logger.warn("massage is null");
+                return;
             }
 
             execute(
@@ -127,12 +140,22 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
 
         if (Command.HARKACHMOD_ON.getCommand().equals(command)) {
-
+            harkachModHistoryRepo.save(
+                    HarkachModHistory.builder()
+                            .chatId(update.getMessage().getChatId().toString())
+                            .build()
+            );
         }
 
         if (Command.HARKACHMOD_OFF.getCommand().equals(command)) {
 
+
+            transactionTemplate.executeWithoutResult(status ->
+                    harkachModHistoryRepo.deleteByChatId(update.getMessage().getChatId().toString()));
+
         }
+
+
     }
 
     public void checkMessages() throws TelegramApiException {
