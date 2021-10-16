@@ -31,8 +31,7 @@ public class HarkachParserService {
 
     private final static String THREAD_URL = "https://2ch.hk/b/res/";
 
-    public final static Set<String> coolSet = Set.of("проиграл", " лол ", "смешно", "орнул", "вголосину",
-            "обосрался", "подливой", "рофл", "lol");
+    public final static Set<String> coolSet = Set.of("проиграл", " лол ", "смешно", "орнул", "вголосину", "lol");
 
 
     private final RestTemplate restTemplate = new RestTemplate();

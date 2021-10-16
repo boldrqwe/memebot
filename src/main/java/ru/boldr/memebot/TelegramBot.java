@@ -8,7 +8,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendAnimation;
-import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendVideo;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageCaption;
@@ -26,9 +25,7 @@ import ru.boldr.memebot.service.HarkachParserService;
 import ru.boldr.memebot.service.MassageHistoryService;
 import ru.boldr.memebot.service.WikiParser;
 
-import javax.transaction.Transactional;
 import java.io.File;
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Locale;
@@ -57,7 +54,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     @Override
     public String getBotToken() {
-        return "1472867697:AAESCvVv5UcIMNwjXFWpzq9cy4CdQoEY7QM";
+        return "1472867697:AAHfP3ih-GBEryCLNuS8lcE3t02SQg7C6PY";
     }
 
 
@@ -65,9 +62,17 @@ public class TelegramBot extends TelegramLongPollingBot {
     public void onUpdateReceived(Update update) {
 
         logger.info("new update: {}", jsonHelper.lineToMap(update));
-        if (!update.hasMessage()) {
+        if (!update.hasMessage() || update.getMessage().getText() == null) {
             logger.warn("massage is empty");
             return;
+        }
+
+        if (update.getMessage().getText().toLowerCase(Locale.ROOT).equals(Command.HELP.getCommand())) {
+            try {
+                execute(new SendMessage(update.getMessage().getChatId().toString(), Command.getCommands()));
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
+            }
         }
 
 
@@ -101,33 +106,24 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void execute(Update update, String chatId, String command) throws TelegramApiException {
-        if (Command.MAN.getCommand().equals(command)) {
+        if (command.toLowerCase(Locale.ROOT).contains(Command.MAN.getCommand())) {
             execute(new SendAnimation(chatId, new InputFile(new File("files/man.mp4"))));
             massageHistoryService.save(BotMassageHistory.builder()
                     .chatId(chatId)
                     .messageId(update.getMessage().getMessageId())
                     .build());
         }
+
         if (Command.MAN_REVERSE.getCommand().equals(command)) {
             execute(new SendAnimation(chatId, new InputFile(new File("files/man_reverse.mp4"))));
         }
+
         if (Command.KAKASHKULES.getCommand().equals(command)) {
-            try {
-                wikiparser.toFile("какашкулес.html");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            File file = new File("./какашкулес.html");
-            execute(new SendDocument(chatId, new InputFile(file, "какашкулес.html")));
+            execute(new SendMessage(chatId, "http://34.149.170.188/какашкулес"));
         }
+
         if (Command.BURGERTRACH.getCommand().equals(command)) {
-            try {
-                wikiparser.toFile("бургертрах.html");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            File file = new File("./бургертрах.html");
-            execute(new SendDocument(chatId, new InputFile(file, "бургертрах.html")));
+            execute(new SendMessage(chatId, "http://34.149.170.188/бургертрах"));
         }
 
         if (Command.HARKACH.getCommand().equals(command)) {

@@ -15,6 +15,9 @@
     <description>Demo project for Spring Boot</description>
 
 
+    <properties>
+        <dl4j.version>0.9.1</dl4j.version>
+    </properties>
 
 
 
@@ -119,6 +122,24 @@
             <artifactId>junit-jupiter-params</artifactId>
             <version>5.7.2</version>
         </dependency>
+
+
+        <dependency>
+            <groupId>org.deeplearning4j</groupId>
+            <artifactId>deeplearning4j-core</artifactId>
+            <version>${dl4j.version}</version>
+        </dependency>
+
+
+
+            <dependency>
+                <groupId>org.nd4j</groupId>
+                <artifactId>nd4j-native-platform</artifactId>
+                <version>${dl4j.version}</version>
+            </dependency>
+
+
+
 
 
     </dependencies>

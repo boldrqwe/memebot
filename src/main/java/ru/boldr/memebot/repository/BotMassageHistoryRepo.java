@@ -9,4 +9,6 @@ public interface BotMassageHistoryRepo extends JpaRepository<BotMassageHistory, 
 
 
     Optional<BotMassageHistory> findByMessageId(Integer messageId);
+
+
 }
