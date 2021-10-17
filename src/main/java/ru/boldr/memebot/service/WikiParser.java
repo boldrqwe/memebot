@@ -2,24 +2,17 @@ package ru.boldr.memebot.service;
 
 
 import lombok.RequiredArgsConstructor;
-import one.util.streamex.StreamEx;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.parser.ParseError;
-import org.jsoup.parser.ParseErrorList;
 import org.jsoup.parser.Parser;
-import org.jsoup.select.Elements;
-import org.jsoup.select.Evaluator;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
-import ru.boldr.memebot.model.Command;
 
 import java.io.*;
-import java.net.CookieStore;
-import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -31,9 +24,9 @@ public class WikiParser {
     private final String KAKASHKYLESOVICH = "Какашкулесович";
 
     @Retryable
-    public String getPage(String heroName) {
+    public String getPage(String heroName) throws IOException {
 
-        Connection connect = Jsoup
+        Connection.Response connect = Jsoup
                 .connect(URL)
                 .parser(Parser.htmlParser())
                 .headers(Map.of(
@@ -53,25 +46,21 @@ public class WikiParser {
 
                 ))
                 .cookie("cookie:", "WMF-Last-Access=09-Oct-2021; WMF-Last-Access-Global=09-Oct-2021; GeoIP=CA:BC:Vancouver:49.28:-123.13:v4; ruwikimwuser-sessionId=b84df8c081b7053d7e0f; ruwikiel-sessionId=a4a7bee0b4fb52b6ff2f; ruwikiwmE-sessionTickLastTickTime=1633817536177; ruwikiwmE-sessionTickTickCount=45")
-                .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.71 Safari/537.36");
+                .maxBodySize(500000)
+                .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.71 Safari/537.36")
+                .execute();
 
 
-        Document document = null;
-        try {
-            document = connect.get();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        Document document = connect.parse();
 
-
-        assert document != null;
         Element firstHeading = document.getElementById("firstHeading");
 
-        String name = firstHeading.getElementById("firstHeading").text();
+        assert firstHeading != null;
+        String name = Objects.requireNonNull(firstHeading.getElementById("firstHeading")).text();
 
         String[] split = name.split(" ");
 
-        String body = document.body().html();
+        String body = document.html();
 
 
         String result = null;

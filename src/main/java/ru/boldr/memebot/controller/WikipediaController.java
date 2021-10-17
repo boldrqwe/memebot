@@ -1,5 +1,7 @@
 package ru.boldr.memebot.controller;
 
+import java.io.IOException;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -14,7 +16,13 @@ public class WikipediaController {
     @GetMapping()
     public String getWikiPage(
     ) {
-        return wikiParser.getPage("какашкулес.html");
+
+        try {
+            return wikiParser.getPage("какашкулес.html");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return "";
     }
 
 }
