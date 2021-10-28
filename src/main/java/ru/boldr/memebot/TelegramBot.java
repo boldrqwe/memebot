@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -36,6 +37,8 @@ import java.util.concurrent.CompletableFuture;
 @RequiredArgsConstructor
 
 public class TelegramBot extends TelegramLongPollingBot {
+    @Value("${bot.token}")
+    private static  String botToken;
 
     private final static Logger logger = LoggerFactory.getLogger(TelegramBot.class);
     private final JsonHelper jsonHelper;
@@ -54,7 +57,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     @Override
     public String getBotToken() {
-        return "1472867697:AAHfP3ih-GBEryCLNuS8lcE3t02SQg7C6PY";
+        return botToken;
     }
 
 
