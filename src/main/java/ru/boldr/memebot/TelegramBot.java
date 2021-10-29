@@ -1,10 +1,15 @@
 package ru.boldr.memebot;
 
+import java.io.File;
+import java.io.Serializable;
+import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.CompletableFuture;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -26,19 +31,11 @@ import ru.boldr.memebot.service.HarkachParserService;
 import ru.boldr.memebot.service.MassageHistoryService;
 import ru.boldr.memebot.service.WikiParser;
 
-import java.io.File;
-import java.io.Serializable;
-import java.util.List;
-import java.util.Locale;
-import java.util.concurrent.CompletableFuture;
-
 @Slf4j
 @Component
 @RequiredArgsConstructor
 
 public class TelegramBot extends TelegramLongPollingBot {
-    @Value("${bot.token}")
-    private static  String botToken;
 
     private final static Logger logger = LoggerFactory.getLogger(TelegramBot.class);
     private final JsonHelper jsonHelper;
@@ -49,7 +46,6 @@ public class TelegramBot extends TelegramLongPollingBot {
     private final HarkachModHistoryRepo harkachModHistoryRepo;
     private final TransactionTemplate transactionTemplate;
 
-
     @Override
     public String getBotUsername() {
         return "MementosFunniestForMeBot";
@@ -57,9 +53,9 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     @Override
     public String getBotToken() {
-        return botToken;
+        String bot_token = System.getenv("BOT_TOKEN");
+        return bot_token == null ? "1472867697:AAGZwRPdxVs3sOP95oMZYv3FIAEuZ652UWQ" : bot_token;
     }
-
 
     @Override
     public void onUpdateReceived(Update update) {
@@ -77,7 +73,6 @@ public class TelegramBot extends TelegramLongPollingBot {
                 e.printStackTrace();
             }
         }
-
 
         if (!updateHandler.checkWriteMessagePermission(update.getMessage())) {
             return;
@@ -148,12 +143,10 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         if (Command.HARKACHMOD_OFF.getCommand().equals(command)) {
 
-
             transactionTemplate.executeWithoutResult(status ->
                     harkachModHistoryRepo.deleteByChatId(update.getMessage().getChatId().toString()));
 
         }
-
 
     }
 
