@@ -1,12 +1,12 @@
 package ru.boldr.memebot;
 
 import java.io.File;
-import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.CompletableFuture;
 
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,26 +15,29 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendAnimation;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.methods.send.SendVideo;
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageCaption;
+import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import ru.boldr.memebot.handlers.UpdateHandler;
 import ru.boldr.memebot.helpers.JsonHelper;
 import ru.boldr.memebot.model.Command;
-import ru.boldr.memebot.model.entity.BotMassageHistory;
+import ru.boldr.memebot.model.entity.BotMessageHistory;
 import ru.boldr.memebot.model.entity.HarkachModHistory;
 import ru.boldr.memebot.repository.HarkachModHistoryRepo;
 import ru.boldr.memebot.service.HarkachParserService;
 import ru.boldr.memebot.service.MassageHistoryService;
+import ru.boldr.memebot.service.ThreadComment;
 import ru.boldr.memebot.service.WikiParser;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
-
 public class TelegramBot extends TelegramLongPollingBot {
 
     private final static Logger logger = LoggerFactory.getLogger(TelegramBot.class);
@@ -53,12 +56,51 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     @Override
     public String getBotToken() {
-        String bot_token = System.getenv("BOT_TOKEN");
-        return bot_token == null ? "1472867697:AAGZwRPdxVs3sOP95oMZYv3FIAEuZ652UWQ" : bot_token;
+        return "1472867697:AAH1cY6xZPZ5SB7UgTtoW8mqhA5kRdyp0Kg";
     }
 
+    @SneakyThrows
     @Override
     public void onUpdateReceived(Update update) {
+
+        if (update.hasCallbackQuery()) {
+            if (update.getCallbackQuery().getData().equals("зов обратно")) {
+                execute(SendPhoto.builder()
+                        .chatId(update.getCallbackQuery().getMessage().getChatId().toString())
+                        .photo(new InputFile(new File("data/img.png")))
+                        .build());
+            }
+        }
+
+
+
+
+
+            InlineKeyboardMarkup inlineKeyboard = new InlineKeyboardMarkup(
+                    List.of(List.of(
+                            InlineKeyboardButton.builder()
+                                    .text("url")
+                                    .url("https://www.yandex.ru")
+                                    .build(),
+                            InlineKeyboardButton.builder()
+                                    .text("callback_data")
+                                    .callbackData("зов обратно")
+                                    .build()
+
+                    ), List.of(
+                            InlineKeyboardButton.builder()
+                                    .text("Switch!")
+                                    .switchInlineQuery("switch_inline_query")
+                                    .build()))
+            );
+
+            SendMessage sendMessage = SendMessage.builder()
+                    .text("клавиатура инлайн")
+                    .chatId(update.getMessage().getChatId().toString())
+                    .replyMarkup(inlineKeyboard)
+                    .build();
+            execute(sendMessage);
+
 
         logger.info("new update: {}", jsonHelper.lineToMap(update));
         if (!update.hasMessage() || update.getMessage().getText() == null) {
@@ -67,11 +109,9 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
 
         if (update.getMessage().getText().toLowerCase(Locale.ROOT).equals(Command.HELP.getCommand())) {
-            try {
+
                 execute(new SendMessage(update.getMessage().getChatId().toString(), Command.getCommands()));
-            } catch (TelegramApiException e) {
-                e.printStackTrace();
-            }
+
         }
 
         if (!updateHandler.checkWriteMessagePermission(update.getMessage())) {
@@ -80,7 +120,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         String chatId = update.getMessage().getChatId().toString();
 
-        try {
+
             String answer = updateHandler.saveFunnyJoke(update);
             if (answer != null) {
                 execute(new SendMessage(chatId, answer));
@@ -97,16 +137,13 @@ public class TelegramBot extends TelegramLongPollingBot {
                     update.getMessage().getText().toLowerCase(Locale.ROOT)
             );
 
-        } catch (TelegramApiException e) {
-            logger.error(e.getMessage(), e);
-            return;
-        }
+
     }
 
     private void execute(Update update, String chatId, String command) throws TelegramApiException {
         if (command.toLowerCase(Locale.ROOT).contains(Command.MAN.getCommand())) {
             execute(new SendAnimation(chatId, new InputFile(new File("files/man.mp4"))));
-            massageHistoryService.save(BotMassageHistory.builder()
+            massageHistoryService.save(BotMessageHistory.builder()
                     .chatId(chatId)
                     .messageId(update.getMessage().getMessageId())
                     .build());
@@ -125,12 +162,16 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
 
         if (Command.HARKACH.getCommand().equals(command)) {
-            String picture = harkachParserService.getPicture(chatId);
-            execute(new SendMessage(chatId, picture));
+            ThreadComment threadComment = harkachParserService.getContent(chatId);
+
+            execute(new SendMessage(chatId, threadComment.picture()));
+            if (threadComment.comment() != null && !threadComment.comment().isEmpty()) {
+                execute(new SendMessage(chatId, threadComment.comment()));
+            }
         }
 
         if (Command.HARKACHBASE_UPDATE.getCommand().equals(command)) {
-            harkachParserService.getPictures();
+            harkachParserService.loadContent();
         }
 
         if (Command.HARKACHMOD_ON.getCommand().equals(command)) {
@@ -148,41 +189,5 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         }
 
-    }
-
-    public void checkMessages() throws TelegramApiException {
-        List<BotMassageHistory> messages = massageHistoryService.findAll();
-        if (messages.size() < 1) {
-            log.info("история пуста");
-            return;
-        }
-        for (BotMassageHistory message : messages) {
-
-            try {
-                CompletableFuture<Serializable> serializableCompletableFuture = executeAsync(
-                        new EditMessageCaption(
-                                message.getChatId(),
-                                message.getMessageId(),
-                                message.getMessageId().toString(),
-                                "",
-                                InlineKeyboardMarkup.builder()
-                                        .build(),
-                                "",
-                                List.of()
-                        ));
-                if (!serializableCompletableFuture.isDone()) {
-                    execute(SendVideo.builder()
-                            .chatId(message.getChatId())
-                            .allowSendingWithoutReply(true)
-                            .video(new InputFile(new File("./files/video_2021-10-03_03-47-06.mp4")))
-                            .build()
-                    );
-                    massageHistoryService.delete(message);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-        }
     }
 }

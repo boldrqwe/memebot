@@ -9,6 +9,7 @@ import java.util.List;
 @JsonSerialize
 public record CurrentThread(
         @JsonProperty("threads")
-        List<ThreadList> threads
+        List<ThreadList> threads,
+        String threadUrl
 ) {
 }

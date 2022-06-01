@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import ru.boldr.memebot.repository.BotMassageHistoryRepo;
-import ru.boldr.memebot.repository.CoolPostRepo;
+import ru.boldr.memebot.repository.CoolFileRepo;
 import ru.boldr.memebot.repository.HarkachFileHistoryRepo;
 
 @Slf4j
@@ -14,14 +14,14 @@ import ru.boldr.memebot.repository.HarkachFileHistoryRepo;
 public class DataCleanExecutor {
 
     private final BotMassageHistoryRepo botMassageHistoryRepo;
-    private final CoolPostRepo coolPostRepo;
+    private final CoolFileRepo coolFileRepo;
     private final HarkachFileHistoryRepo harkachFileHistoryRepo;
 
     @Scheduled(cron =  "0 0 0 ? * 4/1")
     void cleanData() {
 
         botMassageHistoryRepo.deleteAll();
-        coolPostRepo.deleteAll();
+        coolFileRepo.deleteAll();
         harkachFileHistoryRepo.deleteAll();
     }
 

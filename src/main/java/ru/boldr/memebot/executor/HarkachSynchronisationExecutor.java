@@ -16,7 +16,7 @@ public class HarkachSynchronisationExecutor {
     @Scheduled(cron = "* 0/20 * ? * *")
     public void doSynchronisation() {
         log.info("синхронизирую двач");
-        harkachParserService.getPictures();
+        harkachParserService.loadContent();
         log.info("сохранил файлы");
     }
 

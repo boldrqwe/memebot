@@ -23,6 +23,9 @@ public class HarkachModHistory {
     @Column(name = "chat_id")
     String chatId;
 
+    @Column(name = "message")
+    String message;
+
     @Column(name = "create_time")
     @CreationTimestamp
     LocalDateTime createTime;

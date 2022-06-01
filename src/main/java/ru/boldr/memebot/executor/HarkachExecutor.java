@@ -1,6 +1,9 @@
 package ru.boldr.memebot.executor;
 
+import java.util.List;
+
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -10,9 +13,7 @@ import ru.boldr.memebot.TelegramBot;
 import ru.boldr.memebot.model.entity.HarkachModHistory;
 import ru.boldr.memebot.repository.HarkachModHistoryRepo;
 import ru.boldr.memebot.service.HarkachParserService;
-
-import java.util.List;
-
+import ru.boldr.memebot.service.ThreadComment;
 
 @Slf4j
 @Service
@@ -25,24 +26,27 @@ public class HarkachExecutor {
 
     private final HarkachParserService harkachParserService;
 
-    @Scheduled(cron = "0 * * ? * *")
+    @SneakyThrows
+    @Scheduled(cron = "0/15 * * ? * *")
     void sendPictures() {
 
         List<HarkachModHistory> chats = harkachModHistoryRepo.findAll();
 
-        for (HarkachModHistory hMod : chats) {
+        for (HarkachModHistory chat : chats) {
 
-            String picture = harkachParserService.getPicture(hMod.getChatId());
+            ThreadComment threadComment = harkachParserService.getContent(chat.getChatId());
 
-            if ("шутки кончились ):".equals(picture)) {
+            if ("шутки кончились ):".equals(threadComment.picture())) {
                 continue;
             }
 
-            try {
-                telegramBot.executeAsync(new SendMessage(hMod.getChatId(), picture));
-            } catch (TelegramApiException e) {
-                e.printStackTrace();
-            }
+                telegramBot.executeAsync(new SendMessage(chat.getChatId(), threadComment.picture()));
+
+                String comment = threadComment.comment();
+                if (comment != null && !comment.isEmpty()) {
+                    telegramBot.executeAsync(new SendMessage(chat.getChatId(), comment));
+                }
+
         }
     }
 }

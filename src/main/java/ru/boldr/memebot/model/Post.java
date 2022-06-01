@@ -10,7 +10,7 @@ public record Post(
         @JsonProperty("comment")
         String comment,
         @JsonProperty("files")
-        List<ThreadFile> files,
+        List<PostContent> files,
         @JsonProperty("parent")
         Long parent,
         @JsonProperty("num")

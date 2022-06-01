@@ -7,7 +7,7 @@ import ru.boldr.memebot.model.entity.CoolFile;
 import java.util.List;
 
 @Repository
-public interface CoolPostRepo extends JpaRepository<CoolFile, Long> {
+public interface CoolFileRepo extends JpaRepository<CoolFile, Long> {
 
    void deleteAllByFileNameIn(List<String> fileNames);
 

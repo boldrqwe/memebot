@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @Builder
 @Entity
 @Table(name = "bot_message_history")
-public class BotMassageHistory {
+public class BotMessageHistory {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

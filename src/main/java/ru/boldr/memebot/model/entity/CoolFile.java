@@ -1,11 +1,21 @@
 package ru.boldr.memebot.model.entity;
 
-import lombok.*;
+import java.time.LocalDateTime;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-
-import javax.persistence.*;
-import java.time.LocalDateTime;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -22,6 +32,12 @@ public class CoolFile {
 
     @Column(name = "file_name")
     String fileName;
+
+    @Column(length = 10000, name = "message")
+    String message;
+
+    @Column
+    String threadUrl;
 
     @Column(name = "create_time")
     @CreationTimestamp
