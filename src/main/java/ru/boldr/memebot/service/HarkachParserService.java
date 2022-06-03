@@ -24,7 +24,6 @@ import ru.boldr.memebot.model.CurrentThread;
 import ru.boldr.memebot.model.Post;
 import ru.boldr.memebot.model.PostContent;
 import ru.boldr.memebot.model.Thread;
-import ru.boldr.memebot.model.ThreadList;
 import ru.boldr.memebot.model.Threads;
 import ru.boldr.memebot.model.entity.CoolFile;
 import ru.boldr.memebot.model.entity.HarKachFileHistory;
@@ -73,13 +72,12 @@ public class HarkachParserService {
                             .build()
             );
             comment = first.get().getMessage();
-            var threadUrl = first.get().getThreadUrl();
-            return new ThreadComment(fileName, comment, threadUrl);
+            return new ThreadComment(fileName, comment);
         }
-        return new ThreadComment("шутки кончились ):", "", "");
+        return new ThreadComment("шутки кончились ):", "");
     }
 
-    private CurrentThread getCurrentThread(Thread thread) {
+    public CurrentThread getCurrentThread(Thread thread) {
         URI uri = null;
         try {
             uri = Optional.of(new URI(THREAD_URL_RANDOM + thread.num() + ".json"))
@@ -101,7 +99,7 @@ public class HarkachParserService {
         log.info("получено тредов:{}", currentThreads.size());
         List<Post> posts = getPosts(currentThreads);
 
-        Map<Long, Post> numToPost = StreamEx.of(posts).toMap(Post::num, Function.identity());
+            Map<Long, Post> numToPost = StreamEx.of(posts).toMap(Post::num, Function.identity());
 
         List<PostContent> postContents = new ArrayList<>();
         for (Post post : posts) {
@@ -155,18 +153,16 @@ public class HarkachParserService {
     }
 
     private List<Post> getPosts(List<CurrentThread> currentThreads) {
-        List<Post> threadPosts = new ArrayList<>();
-        for (CurrentThread thread : currentThreads) {
-            List<ThreadList> threads = thread.threads();
-            for (ThreadList threadList : threads) {
-                List<Post> posts = threadList.posts();
-                threadPosts.addAll(posts);
-            }
-        }
-        return threadPosts;
+        List<Post> posts = new ArrayList<>();
+        currentThreads.forEach(ct -> ct.threads().forEach(ctt -> posts.addAll(ctt.posts())));
+        return posts;
     }
 
-    private List<CurrentThread> getCurrentThreads() {
+    public List<Post> getPosts() {
+        return getPosts(getCurrentThreads());
+    }
+
+    public List<CurrentThread> getCurrentThreads() {
         URI random = null;
         URI politach = null;
         try {

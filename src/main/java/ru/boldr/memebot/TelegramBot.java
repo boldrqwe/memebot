@@ -1,8 +1,6 @@
 package ru.boldr.memebot;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
 
 import lombok.RequiredArgsConstructor;
@@ -18,11 +16,6 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import ru.boldr.memebot.handlers.UpdateHandler;
 import ru.boldr.memebot.helpers.JsonHelper;
@@ -31,7 +24,8 @@ import ru.boldr.memebot.model.entity.BotMessageHistory;
 import ru.boldr.memebot.model.entity.HarkachModHistory;
 import ru.boldr.memebot.repository.HarkachModHistoryRepo;
 import ru.boldr.memebot.service.HarkachParserService;
-import ru.boldr.memebot.service.MassageHistoryService;
+import ru.boldr.memebot.service.MessageHistoryService;
+import ru.boldr.memebot.service.SpeakService;
 import ru.boldr.memebot.service.ThreadComment;
 import ru.boldr.memebot.service.WikiParser;
 
@@ -45,9 +39,10 @@ public class TelegramBot extends TelegramLongPollingBot {
     private final UpdateHandler updateHandler;
     private final HarkachParserService harkachParserService;
     private final WikiParser wikiparser;
-    private final MassageHistoryService massageHistoryService;
+    private final MessageHistoryService messageHistoryService;
     private final HarkachModHistoryRepo harkachModHistoryRepo;
     private final TransactionTemplate transactionTemplate;
+    private final SpeakService speakService;
 
     @Override
     public String getBotUsername() {
@@ -63,6 +58,14 @@ public class TelegramBot extends TelegramLongPollingBot {
     @Override
     public void onUpdateReceived(Update update) {
 
+        if (update.hasMessage()) {
+            String text = update.getMessage().getText();
+            if (text.toLowerCase().contains("бот скажи")) {
+                SendMessage message = speakService.makeMessage(text, update);
+                execute(message);
+            }
+        }
+
         if (update.hasCallbackQuery()) {
             if (update.getCallbackQuery().getData().equals("зов обратно")) {
                 execute(SendPhoto.builder()
@@ -72,36 +75,6 @@ public class TelegramBot extends TelegramLongPollingBot {
             }
         }
 
-
-
-
-
-            InlineKeyboardMarkup inlineKeyboard = new InlineKeyboardMarkup(
-                    List.of(List.of(
-                            InlineKeyboardButton.builder()
-                                    .text("url")
-                                    .url("https://www.yandex.ru")
-                                    .build(),
-                            InlineKeyboardButton.builder()
-                                    .text("callback_data")
-                                    .callbackData("зов обратно")
-                                    .build()
-
-                    ), List.of(
-                            InlineKeyboardButton.builder()
-                                    .text("Switch!")
-                                    .switchInlineQuery("switch_inline_query")
-                                    .build()))
-            );
-
-            SendMessage sendMessage = SendMessage.builder()
-                    .text("клавиатура инлайн")
-                    .chatId(update.getMessage().getChatId().toString())
-                    .replyMarkup(inlineKeyboard)
-                    .build();
-            execute(sendMessage);
-
-
         logger.info("new update: {}", jsonHelper.lineToMap(update));
         if (!update.hasMessage() || update.getMessage().getText() == null) {
             logger.warn("massage is empty");
@@ -110,7 +83,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         if (update.getMessage().getText().toLowerCase(Locale.ROOT).equals(Command.HELP.getCommand())) {
 
-                execute(new SendMessage(update.getMessage().getChatId().toString(), Command.getCommands()));
+            execute(new SendMessage(update.getMessage().getChatId().toString(), Command.getCommands()));
 
         }
 
@@ -120,30 +93,28 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         String chatId = update.getMessage().getChatId().toString();
 
+        String answer = updateHandler.saveFunnyJoke(update);
+        if (answer != null) {
+            execute(new SendMessage(chatId, answer));
+        }
 
-            String answer = updateHandler.saveFunnyJoke(update);
-            if (answer != null) {
-                execute(new SendMessage(chatId, answer));
-            }
+        if (update.getMessage().getText() == null) {
+            logger.warn("massage is null");
+            return;
+        }
 
-            if (update.getMessage().getText() == null) {
-                logger.warn("massage is null");
-                return;
-            }
-
-            execute(
-                    update,
-                    chatId,
-                    update.getMessage().getText().toLowerCase(Locale.ROOT)
-            );
-
+        execute(
+                update,
+                chatId,
+                update.getMessage().getText().toLowerCase(Locale.ROOT)
+        );
 
     }
 
     private void execute(Update update, String chatId, String command) throws TelegramApiException {
         if (command.toLowerCase(Locale.ROOT).contains(Command.MAN.getCommand())) {
             execute(new SendAnimation(chatId, new InputFile(new File("files/man.mp4"))));
-            massageHistoryService.save(BotMessageHistory.builder()
+            messageHistoryService.save(BotMessageHistory.builder()
                     .chatId(chatId)
                     .messageId(update.getMessage().getMessageId())
                     .build());

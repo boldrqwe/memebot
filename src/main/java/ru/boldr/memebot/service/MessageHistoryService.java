@@ -10,7 +10,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-public class MassageHistoryService {
+public class MessageHistoryService {
 
     private final BotMassageHistoryRepo botMassageHistoryRepo;
 
