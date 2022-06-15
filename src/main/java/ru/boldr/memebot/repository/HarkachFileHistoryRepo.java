@@ -4,6 +4,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import ru.boldr.memebot.model.entity.HarKachFileHistory;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -14,4 +16,6 @@ public interface HarkachFileHistoryRepo extends JpaRepository<HarKachFileHistory
     Optional<HarKachFileHistory> findByChatIdAndFileName(String chatId, String filename);
 
     List<HarKachFileHistory> findAllByChatId(String chatId);
+
+    void deleteAllByCreateTimeBefore(LocalDateTime minus);
 }

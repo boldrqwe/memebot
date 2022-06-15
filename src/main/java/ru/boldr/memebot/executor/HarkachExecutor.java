@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.ParseMode;
+import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.methods.send.SendVideo;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
@@ -33,6 +34,7 @@ public class HarkachExecutor {
     private final HarkachParserService harkachParserService;
     private final HarkachMarkupConverter harkachMarkupConverter;
 
+    //* * * ? * * *
     @SneakyThrows
     @Scheduled(cron = "0/15 * * ? * *")
     void sendPictures() {
@@ -46,35 +48,36 @@ public class HarkachExecutor {
             if ("шутки кончились ):".equals(threadComment.picture())) {
                 continue;
             }
+            String chatId = chat.getChatId();
+            String picture = threadComment.picture();
+            String threadUrl = getThreadUrlFromPictureUrl(picture);
 
             InlineKeyboardMarkup inlineKeyboard = new InlineKeyboardMarkup(
-                    List.of(List.of(
-                            InlineKeyboardButton.builder()
-                                    .text("перейти в тред")
-                                    .url(getUrl(threadComment.picture()))
-                                    .build()
-                    ))
+                    List.of(
+                            List.of(
+                                    InlineKeyboardButton.builder()
+                                            .text("перейти в тред")
+                                            .url(threadUrl)
+                                            .build()),
+                            List.of(
+                                    InlineKeyboardButton.builder()
+                                            .text("скачать все")
+                                            .callbackData(threadUrl + "," + chatId + ",callback")
+                                            .build())
+                    )
             );
-
-            String picture = threadComment.picture();
             URL url = new URL(picture);
 
-            String[] split = picture.split("\\.");
-
-            var extension = split[split.length - 1];
+            var extension = harkachParserService.getExtension(picture);
 
             InputStream inputStream = url.openStream();
 
-
-
             InputFile inputFile = new InputFile(inputStream, "file");
 
-            String chatId = chat.getChatId();
             String comment = harkachMarkupConverter.convertToTgHtml(threadComment.comment());
 
             switch (extension) {
-                case ("jpg"), ("png") ->
-                        telegramBot.executeAsync(SendPhoto.builder()
+                case ("jpg"), ("png") -> telegramBot.executeAsync(SendPhoto.builder()
                         .chatId(chatId)
                         .photo(inputFile)
                         .caption(comment)
@@ -82,7 +85,7 @@ public class HarkachExecutor {
                         .replyMarkup(inlineKeyboard)
                         .build());
 
-                case ("mp4"), ("webm") ->  telegramBot.executeAsync(SendVideo.builder()
+                case ("mp4"), ("webm") -> telegramBot.executeAsync(SendVideo.builder()
                         .chatId(chatId)
                         .caption(comment)
                         .video(inputFile)
@@ -95,7 +98,7 @@ public class HarkachExecutor {
         }
     }
 
-    private String getUrl(String picture) {
+    private String getThreadUrlFromPictureUrl(String picture) {
         int length = picture.length();
         Stack<Character> stack = new Stack<>();
         StringBuilder result = new StringBuilder();

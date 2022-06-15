@@ -9,6 +9,5 @@ import java.util.List;
 public record ThreadList(
         @JsonProperty("posts")
         List<Post> posts
-
 ) {
 }

@@ -1,5 +1,9 @@
 package ru.boldr.memebot.executor;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -17,12 +21,12 @@ public class DataCleanExecutor {
     private final CoolFileRepo coolFileRepo;
     private final HarkachFileHistoryRepo harkachFileHistoryRepo;
 
-    @Scheduled(cron =  "0 0 0 ? * 4/1")
+    @Scheduled(cron = "0 0 0 ? * 4/1")
     void cleanData() {
 
         botMassageHistoryRepo.deleteAll();
         coolFileRepo.deleteAll();
-        harkachFileHistoryRepo.deleteAll();
+        harkachFileHistoryRepo.deleteAllByCreateTimeBefore(LocalDateTime.now().minus(7L, ChronoUnit.DAYS));
     }
 
 }

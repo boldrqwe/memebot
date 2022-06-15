@@ -1,7 +1,9 @@
 package ru.boldr.memebot.service;
 
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -12,6 +14,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import javax.annotation.Nullable;
 import javax.transaction.Transactional;
 
 import lombok.AllArgsConstructor;
@@ -20,10 +23,14 @@ import one.util.streamex.StreamEx;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+import org.telegram.telegrambots.meta.api.objects.media.InputMedia;
+import org.telegram.telegrambots.meta.api.objects.media.InputMediaPhoto;
+import org.telegram.telegrambots.meta.api.objects.media.InputMediaVideo;
 import ru.boldr.memebot.model.CurrentThread;
 import ru.boldr.memebot.model.Post;
 import ru.boldr.memebot.model.PostContent;
 import ru.boldr.memebot.model.Thread;
+import ru.boldr.memebot.model.ThreadList;
 import ru.boldr.memebot.model.Threads;
 import ru.boldr.memebot.model.entity.CoolFile;
 import ru.boldr.memebot.model.entity.HarKachFileHistory;
@@ -42,6 +49,7 @@ public class HarkachParserService {
 
     private final static String THREAD_URL_RANDOM = "https://2ch.hk/b/res/";
     private final static String THREAD_URL_POLITACH = "https://2ch.hk/po/res/";
+    private final static String DVACH = "https://2ch.hk";
 
     public final static Set<String> coolSet = Set.of("проиграл", " лол ", "смешно", "орнул", "вголосину", "lol");
 
@@ -77,11 +85,72 @@ public class HarkachParserService {
         return new ThreadComment("шутки кончились ):", "");
     }
 
+    public Map<String, List<InputMedia>> getContentMap(String chatId) {
+
+        List<CoolFile> coolFiles = coolFileRepo.findAll();
+
+        List<String> history = harkachFileHistoryRepo.findAllByChatId(chatId)
+                .stream().map(HarKachFileHistory::getFileName).collect(Collectors.toList());
+
+        List<CoolFile> coolFiles1 = StreamEx.of(coolFiles).filter(cf -> !history.contains(cf.getFileName())).toList();
+        Map<String, List<CoolFile>> groupedFiles = StreamEx.of(coolFiles1).groupingBy(CoolFile::getMessage);
+
+        List<InputMedia> inputMedias = new ArrayList<>();
+
+        Optional<Map<String, List<CoolFile>>> first = StreamEx.of(groupedFiles).findFirst();
+        if (first.isPresent()) {
+            Map<String, List<CoolFile>> files = first.get();
+
+            files.forEach((message, fileList) -> {
+                inputMedias.addAll(StreamEx.of(fileList).map(this::toInputMedia).collect(Collectors.toList()));
+                saveHarkachHistory(chatId, fileList);
+            });
+
+        }
+        String comment = first.get().keySet().stream().findFirst().orElse("");
+        return Map.of(comment, inputMedias);
+    }
+
+    private void saveHarkachHistory(String chatId, List<CoolFile> fileList) {
+        var harKachFileHistories = StreamEx.of(fileList)
+                .map(f -> toHarKachFileHistory(f, chatId))
+                .toList();
+        harkachFileHistoryRepo.saveAll(harKachFileHistories);
+    }
+
+    private HarKachFileHistory toHarKachFileHistory(CoolFile file, String chatId) {
+        return HarKachFileHistory.builder()
+                .chatId(chatId)
+                .fileName(file.getFileName())
+                .build();
+    }
+
+    @Nullable
+    private InputMedia toInputMedia(CoolFile f) {
+        String extension = getExtension(f.getFileName());
+        URL url = null;
+        try {
+            url = new URL("https://2ch.hk" + f.getFileName());
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+        if (url != null) {
+            return getInputMedia(url, extension);
+        }
+        return null;
+    }
+
     public CurrentThread getCurrentThread(Thread thread) {
+        Long num = thread.num();
+        CurrentThread currentThread = getCurrentThread(num);
+        return Optional.ofNullable(currentThread).orElse(new CurrentThread(List.of()));
+    }
+
+    private CurrentThread getCurrentThread(Long num) {
         URI uri = null;
         try {
-            uri = Optional.of(new URI(THREAD_URL_RANDOM + thread.num() + ".json"))
-                    .orElse(new URI(THREAD_URL_POLITACH + thread.num() + ".json"));
+            uri = Optional.of(new URI(THREAD_URL_RANDOM + num + ".json"))
+                    .orElse(new URI(THREAD_URL_POLITACH + num + ".json"));
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
@@ -91,7 +160,7 @@ public class HarkachParserService {
         } catch (Exception e) {
             log.warn(e.getMessage());
         }
-        return Optional.ofNullable(forObject).orElse(new CurrentThread(List.of()));
+        return forObject;
     }
 
     public void loadContent() {
@@ -99,7 +168,7 @@ public class HarkachParserService {
         log.info("получено тредов:{}", currentThreads.size());
         List<Post> posts = getPosts(currentThreads);
 
-            Map<Long, Post> numToPost = StreamEx.of(posts).toMap(Post::num, Function.identity());
+        Map<Long, Post> numToPost = StreamEx.of(posts).toMap(Post::num, Function.identity());
 
         List<PostContent> postContents = new ArrayList<>();
         for (Post post : posts) {
@@ -138,13 +207,15 @@ public class HarkachParserService {
     }
 
     private CoolFile toCoolFile(PostContent postContent) {
-
-        String message = postContent.message()
-                .replaceAll("&\\W+\\S+;", "")
-                .replaceAll("<\\S+\\s+\\S+;", "")
-                .replaceAll("<\\S+>", "")
-                .replaceAll("\\s\\S+=\"\\S+\"", "")
-                .replaceAll("\\^1", "");
+        String message = null;
+        if (postContent.message() != null) {
+            message = postContent.message()
+                    .replaceAll("&\\W+\\S+;", "")
+                    .replaceAll("<\\S+\\s+\\S+;", "")
+                    .replaceAll("<\\S+>", "")
+                    .replaceAll("\\s\\S+=\"\\S+\"", "")
+                    .replaceAll("\\^1", "");
+        }
 
         return CoolFile.builder()
                 .fileName(postContent.path())
@@ -185,5 +256,95 @@ public class HarkachParserService {
                 .map(this::getCurrentThread)
                 .remove(t -> t.threads().isEmpty())
                 .toList();
+    }
+
+    public List<InputMedia> getContentFromCurrentThread(String threadUrl, String chatId) {
+        String[] split = threadUrl.split("/");
+        List<InputMedia> inputMedias = new ArrayList<>();
+
+        String stringNumWithHtml = split[5];
+
+        String[] split1 = stringNumWithHtml.split("\\.");
+
+        String stringNum = split1[0];
+        Long num = Long.valueOf(stringNum);
+
+        CurrentThread currentThread = getCurrentThread(num);
+
+        List<ThreadList> threads = currentThread.threads();
+        List<Post> postList = new ArrayList<>();
+
+        threads.forEach(t -> postList.addAll(t.posts()));
+
+        postList.forEach(post -> {
+            inputMedias.addAll(createInputMedia(post));
+        });
+
+        List<CoolFile> coolFiles = StreamEx.of(postList).flatMap(p -> toCoolFiles(p).stream()).toList();
+
+        var history = harkachFileHistoryRepo.findAll().stream()
+                .map(HarKachFileHistory::getFileName)
+                .toList();
+
+        var coolFiles1 = StreamEx.of(coolFiles).filter(c -> !history.contains(c.getFileName())).toList();
+
+        if (coolFiles1.isEmpty()) {
+            return List.of();
+        }
+
+        saveHarkachHistory(chatId, coolFiles);
+
+        return inputMedias;
+    }
+
+    private List<CoolFile> toCoolFiles(Post post) {
+        return post.files().stream().map(this::toCoolFile).toList();
+    }
+
+    private List<InputMedia> createInputMedia(Post post) {
+        List<PostContent> files = post.files();
+
+        List<InputMedia> result = new ArrayList<>();
+        files.forEach(f -> {
+            String path = f.path();
+
+            URL url = null;
+            try {
+                url = new URL(DVACH + path);
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            }
+
+            String extension = getExtension(path);
+
+            InputMedia inputMedia = getInputMedia(url, extension);
+            if (inputMedia != null) {
+                result.add(inputMedia);
+            }
+        });
+
+        return result;
+    }
+
+    private InputMedia getInputMedia(URL url, String extension) {
+        InputMedia inputMedia = null;
+        switch (extension) {
+            case ("jpg"), ("png") -> inputMedia = InputMediaPhoto.builder()
+                    .media(url.toString())
+                    .build();
+
+            case ("mp4") -> inputMedia = InputMediaVideo.builder()
+                    .media(url.toString())
+                    .build();
+
+            default -> {
+            }
+        }
+        return inputMedia;
+    }
+
+    public String getExtension(String path) {
+        String[] split = path.split("\\.");
+        return split[split.length - 1];
     }
 }
