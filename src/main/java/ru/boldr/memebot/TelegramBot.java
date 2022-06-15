@@ -26,6 +26,7 @@ import ru.boldr.memebot.helpers.JsonHelper;
 import ru.boldr.memebot.model.Command;
 import ru.boldr.memebot.model.entity.BotMessageHistory;
 import ru.boldr.memebot.model.entity.HarkachModHistory;
+import ru.boldr.memebot.repository.HarkachFileHistoryRepo;
 import ru.boldr.memebot.repository.HarkachModHistoryRepo;
 import ru.boldr.memebot.service.HarkachParserService;
 import ru.boldr.memebot.service.HatGameService;
@@ -49,6 +50,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private final TransactionTemplate transactionTemplate;
     private final SpeakService speakService;
     private final HatGameService hatGameService;
+    private final HarkachFileHistoryRepo harkachFileHistoryRepo;
 
     @Override
     public String getBotUsername() {
@@ -76,54 +78,54 @@ public class TelegramBot extends TelegramLongPollingBot {
                         sendMediaGroup(chatId, part)
                 );
             }
+        }
 
-            if (update.hasMessage()) {
+        if (update.hasMessage()) {
 
-                var message = update.getMessage();
-                var chatId = message.getChatId().toString();
-                var text = update.getMessage().getText();
+            var message = update.getMessage();
+            var chatId = message.getChatId().toString();
+            var text = update.getMessage().getText();
 
-                if (text.toLowerCase().contains("бот скажи")) {
-                    SendMessage sendMessage = speakService.makeMessage(text, update);
-                    execute(sendMessage);
-                }
-
-                if (text.equalsIgnoreCase("/шляпа")) {
-                    hatGameService.process(update);
-                }
-
-                logger.info("new update: {}", jsonHelper.lineToMap(update));
-                if (!update.hasMessage() || message.getText() == null) {
-                    logger.warn("massage is empty");
-                    return;
-                }
-
-                if (text.toLowerCase(Locale.ROOT).equals(Command.HELP.getCommand())) {
-
-                    execute(new SendMessage(chatId, Command.getCommands()));
-
-                }
-
-                if (!updateHandler.checkWriteMessagePermission(message)) {
-                    return;
-                }
-
-                String answer = updateHandler.saveFunnyJoke(update);
-                if (answer != null) {
-                    execute(new SendMessage(chatId, answer));
-                }
-
-                if (update.getMessage().getText() == null) {
-                    logger.warn("massage is null");
-                    return;
-                }
-
-                execute(
-                        update,
-                        chatId,
-                        text.toLowerCase(Locale.ROOT)
-                );
+            if (text.toLowerCase().contains("бот скажи")) {
+                SendMessage sendMessage = speakService.makeMessage(text, update);
+                execute(sendMessage);
             }
+
+            if (text.equalsIgnoreCase("/шляпа")) {
+                hatGameService.process(update);
+            }
+
+            logger.info("new update: {}", jsonHelper.lineToMap(update));
+            if (!update.hasMessage() || message.getText() == null) {
+                logger.warn("massage is empty");
+                return;
+            }
+
+            if (text.toLowerCase(Locale.ROOT).equals(Command.HELP.getCommand())) {
+
+                execute(new SendMessage(chatId, Command.getCommands()));
+
+            }
+
+            if (!updateHandler.checkWriteMessagePermission(message)) {
+                return;
+            }
+
+            String answer = updateHandler.saveFunnyJoke(update);
+            if (answer != null) {
+                execute(new SendMessage(chatId, answer));
+            }
+
+            if (update.getMessage().getText() == null) {
+                logger.warn("massage is null");
+                return;
+            }
+
+            execute(
+                    update,
+                    chatId,
+                    text.toLowerCase(Locale.ROOT)
+            );
         }
     }
 
@@ -167,26 +169,26 @@ public class TelegramBot extends TelegramLongPollingBot {
             if (threadComment.comment() != null && !threadComment.comment().isEmpty()) {
                 execute(new SendMessage(chatId, threadComment.comment()));
             }
+        }
 
-            if (Command.HARKACHBASE_UPDATE.getCommand().equals(command)) {
-                harkachParserService.loadContent();
-            }
+        if (Command.HARKACHBASE_UPDATE.getCommand().equals(command)) {
+            harkachParserService.loadContent();
+        }
 
-            if (Command.HARKACHMOD_ON.getCommand().equals(command)) {
-                harkachModHistoryRepo.save(
-                        HarkachModHistory.builder()
-                                .chatId(update.getMessage().getChatId().toString())
-                                .build()
-                );
-            }
+        if (Command.HARKACHMOD_ON.getCommand().equals(command)) {
+            harkachModHistoryRepo.save(
+                    HarkachModHistory.builder()
+                            .chatId(update.getMessage().getChatId().toString())
+                            .build()
+            );
+        }
 
-            if (Command.HARKACHMOD_OFF.getCommand().equals(command)) {
+        if (Command.HARKACHMOD_OFF.getCommand().equals(command)) {
 
-                transactionTemplate.executeWithoutResult(status ->
-                        harkachModHistoryRepo.deleteByChatId(update.getMessage().getChatId().toString()));
-
-            }
+            transactionTemplate.executeWithoutResult(status ->
+                    harkachModHistoryRepo.deleteByChatId(update.getMessage().getChatId().toString()));
 
         }
+
     }
 }

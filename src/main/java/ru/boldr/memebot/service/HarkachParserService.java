@@ -188,8 +188,6 @@ public class HarkachParserService {
 
         Set<PostContent> postContentSet = StreamEx.of(postContents).toSet();
 
-        coolFileRepo.deleteAllByFileNameIn(StreamEx.of(postContentSet).map(PostContent::path).toList());
-
         List<CoolFile> coolFiles = StreamEx.of(postContentSet).map(this::toCoolFile).toList();
 
         coolFileRepo.saveAll(coolFiles);
@@ -208,19 +206,9 @@ public class HarkachParserService {
     }
 
     private CoolFile toCoolFile(PostContent postContent) {
-        String message = null;
-        if (postContent.message() != null) {
-            message = postContent.message()
-                    .replaceAll("&\\W+\\S+;", "")
-                    .replaceAll("<\\S+\\s+\\S+;", "")
-                    .replaceAll("<\\S+>", "")
-                    .replaceAll("\\s\\S+=\"\\S+\"", "")
-                    .replaceAll("\\^1", "");
-        }
-
         return CoolFile.builder()
                 .fileName(postContent.path())
-                .message(message)
+                .message(postContent.message())
                 .build();
     }
 
