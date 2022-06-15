@@ -10,7 +10,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
+import org.telegram.telegrambots.meta.api.methods.ParseMode;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.methods.send.SendVideo;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
@@ -19,6 +19,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import ru.boldr.memebot.TelegramBot;
 import ru.boldr.memebot.model.entity.HarkachModHistory;
 import ru.boldr.memebot.repository.HarkachModHistoryRepo;
+import ru.boldr.memebot.service.HarkachMarkupConverter;
 import ru.boldr.memebot.service.HarkachParserService;
 import ru.boldr.memebot.service.ThreadComment;
 
@@ -28,10 +29,9 @@ import ru.boldr.memebot.service.ThreadComment;
 public class HarkachExecutor {
 
     private final TelegramBot telegramBot;
-
     private final HarkachModHistoryRepo harkachModHistoryRepo;
-
     private final HarkachParserService harkachParserService;
+    private final HarkachMarkupConverter harkachMarkupConverter;
 
     @SneakyThrows
     @Scheduled(cron = "0/15 * * ? * *")
@@ -70,7 +70,7 @@ public class HarkachExecutor {
             InputFile inputFile = new InputFile(inputStream, "file");
 
             String chatId = chat.getChatId();
-            String comment = threadComment.comment();
+            String comment = harkachMarkupConverter.convertToTgHtml(threadComment.comment());
 
             switch (extension) {
                 case ("jpg"), ("png") ->
@@ -78,6 +78,7 @@ public class HarkachExecutor {
                         .chatId(chatId)
                         .photo(inputFile)
                         .caption(comment)
+                        .parseMode(ParseMode.HTML)
                         .replyMarkup(inlineKeyboard)
                         .build());
 
@@ -85,14 +86,12 @@ public class HarkachExecutor {
                         .chatId(chatId)
                         .caption(comment)
                         .video(inputFile)
+                        .parseMode(ParseMode.HTML)
                         .replyMarkup(inlineKeyboard)
                         .build());
 
                 default -> throw new IllegalStateException("Unexpected value: " + extension);
             }
-
-
-
         }
     }
 
