@@ -23,6 +23,7 @@ import one.util.streamex.StreamEx;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+import org.telegram.telegrambots.meta.api.methods.ParseMode;
 import org.telegram.telegrambots.meta.api.objects.media.InputMedia;
 import org.telegram.telegrambots.meta.api.objects.media.InputMediaPhoto;
 import org.telegram.telegrambots.meta.api.objects.media.InputMediaVideo;
@@ -331,10 +332,12 @@ public class HarkachParserService {
         switch (extension) {
             case ("jpg"), ("png") -> inputMedia = InputMediaPhoto.builder()
                     .media(url.toString())
+                    .parseMode(ParseMode.HTML)
                     .build();
 
             case ("mp4") -> inputMedia = InputMediaVideo.builder()
                     .media(url.toString())
+                    .parseMode(ParseMode.HTML)
                     .build();
 
             default -> {

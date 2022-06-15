@@ -1,7 +1,9 @@
 package ru.boldr.memebot;
 
 import java.io.File;
+import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 import com.google.common.collect.Lists;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +19,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMediaGroup;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.media.InputMedia;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import ru.boldr.memebot.handlers.UpdateHandler;
 import ru.boldr.memebot.helpers.JsonHelper;
@@ -69,16 +72,9 @@ public class TelegramBot extends TelegramLongPollingBot {
                 var chatId = update.getCallbackQuery().getMessage().getChatId().toString();
                 var inputMedias = harkachParserService.getContentFromCurrentThread(threadUrl, chatId);
                 var partition = Lists.partition(inputMedias, 10);
-                partition.stream().findFirst().ifPresent(part -> {
-                    try {
-                        execute(SendMediaGroup.builder()
-                                .chatId(chatId)
-                                .medias(part)
-                                .build());
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                });
+                partition.forEach(part ->
+                        sendMediaGroup(chatId, part)
+                );
             }
 
             if (update.hasMessage()) {
@@ -128,6 +124,18 @@ public class TelegramBot extends TelegramLongPollingBot {
                         text.toLowerCase(Locale.ROOT)
                 );
             }
+        }
+    }
+
+    private void sendMediaGroup(String chatId, List<InputMedia> part) {
+        try {
+            TimeUnit.MINUTES.sleep(1L);
+            execute(SendMediaGroup.builder()
+                    .chatId(chatId)
+                    .medias(part)
+                    .build());
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
