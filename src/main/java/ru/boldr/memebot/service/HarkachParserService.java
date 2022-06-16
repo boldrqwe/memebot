@@ -190,7 +190,12 @@ public class HarkachParserService {
 
         List<CoolFile> coolFiles = StreamEx.of(postContentSet).map(this::toCoolFile).toList();
 
-        coolFileRepo.saveAll(coolFiles);
+        List<String> all = coolFileRepo.findAll().stream().map(CoolFile::getFileName).toList();
+
+        List<CoolFile> toSave =
+                coolFiles.stream().filter(coolFile -> !all.contains(coolFile.getMessage())).toList();
+
+        coolFileRepo.saveAll(toSave);
     }
 
     private List<PostContent> getFunnyFiles(Map<Long, Post> numToPost, Post post) {
