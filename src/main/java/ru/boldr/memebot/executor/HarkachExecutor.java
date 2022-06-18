@@ -21,6 +21,7 @@ import ru.boldr.memebot.model.entity.HarkachModHistory;
 import ru.boldr.memebot.repository.HarkachModHistoryRepo;
 import ru.boldr.memebot.service.HarkachMarkupConverter;
 import ru.boldr.memebot.service.HarkachParserService;
+import ru.boldr.memebot.service.TelegramSemaphore;
 import ru.boldr.memebot.service.ThreadComment;
 
 @Slf4j
@@ -32,6 +33,7 @@ public class HarkachExecutor {
     private final HarkachModHistoryRepo harkachModHistoryRepo;
     private final HarkachParserService harkachParserService;
     private final HarkachMarkupConverter harkachMarkupConverter;
+    private final TelegramSemaphore telegramSemaphore;
 
     //* * * ? * * *
     @SneakyThrows
@@ -76,21 +78,23 @@ public class HarkachExecutor {
             String comment = harkachMarkupConverter.convertToTgHtml(threadComment.comment());
 
             switch (extension) {
-                case ("jpg"), ("png") -> telegramBot.executeAsync(SendPhoto.builder()
-                        .chatId(chatId)
-                        .photo(inputFile)
-                        .caption(comment)
-                        .parseMode(ParseMode.HTML)
-                        .replyMarkup(inlineKeyboard)
-                        .build());
+                case ("jpg"), ("png") -> telegramSemaphore
+                        .executeInLock(() -> telegramBot.executeAsync(SendPhoto.builder()
+                                .chatId(chatId)
+                                .photo(inputFile)
+                                .caption(comment)
+                                .parseMode(ParseMode.HTML)
+                                .replyMarkup(inlineKeyboard)
+                                .build()), 1L);
 
-                case ("mp4"), ("webm") -> telegramBot.executeAsync(SendVideo.builder()
-                        .chatId(chatId)
-                        .caption(comment)
-                        .video(inputFile)
-                        .parseMode(ParseMode.HTML)
-                        .replyMarkup(inlineKeyboard)
-                        .build());
+                case ("mp4"), ("webm") -> telegramSemaphore
+                        .executeInLock(() -> telegramBot.executeAsync(SendVideo.builder()
+                                .chatId(chatId)
+                                .caption(comment)
+                                .video(inputFile)
+                                .parseMode(ParseMode.HTML)
+                                .replyMarkup(inlineKeyboard)
+                                .build()), 1L);
 
                 default -> throw new IllegalStateException("Unexpected value: " + extension);
             }

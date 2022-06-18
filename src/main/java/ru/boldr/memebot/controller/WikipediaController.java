@@ -14,9 +14,7 @@ public class WikipediaController {
     private final WikiParser wikiParser;
 
     @GetMapping()
-    public String getWikiPage(
-    ) {
-
+    public String getWikiPage() {
         try {
             return wikiParser.getPage("какашкулес.html");
         } catch (IOException e) {
@@ -24,5 +22,4 @@ public class WikipediaController {
         }
         return "";
     }
-
 }
