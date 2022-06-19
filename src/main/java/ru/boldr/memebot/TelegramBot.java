@@ -174,11 +174,11 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
 
         if (Command.KAKASHKULES.getCommand().equals(command)) {
-            sendMessage(new SendMessage(chatId, "http://51.250.107.78/8082"));
+            sendMessage(new SendMessage(chatId, "http://51.250.107.78:8082/"));
         }
 
         if (Command.BURGERTRACH.getCommand().equals(command)) {
-            sendMessage(new SendMessage(chatId, "http://51.250.107.78/8082"));
+            sendMessage(new SendMessage(chatId, "http://51.250.107.78:8082/"));
         }
 
         if (Command.HARKACH.getCommand().equals(command)) {

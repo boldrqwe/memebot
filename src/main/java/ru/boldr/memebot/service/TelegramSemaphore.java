@@ -7,7 +7,6 @@ import io.github.bucket4j.local.LocalBucket;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-@Component
 @RequiredArgsConstructor
 public class TelegramSemaphore {
 

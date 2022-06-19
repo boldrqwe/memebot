@@ -9,6 +9,7 @@ import io.github.bucket4j.Bucket4j;
 import io.github.bucket4j.local.LocalBucket;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import ru.boldr.memebot.service.TelegramSemaphore;
 
 @Configuration
 public class HarkachConfig {
@@ -25,7 +26,7 @@ public class HarkachConfig {
     }
 
     @Bean
-    public ReentrantLock telegramSemaphore() {
-        return new ReentrantLock();
+    public TelegramSemaphore telegramSemaphore(LocalBucket bucket) {
+        return new TelegramSemaphore(bucket, new ReentrantLock());
     }
 }
