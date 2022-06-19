@@ -19,8 +19,6 @@
         <dl4j.version>0.9.1</dl4j.version>
     </properties>
 
-
-
     <dependencies>
 
         <dependency>

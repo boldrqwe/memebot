@@ -10,7 +10,6 @@ import ru.boldr.memebot.service.HarkachParserService;
 @RequiredArgsConstructor
 public class HarkachSynchronisationExecutor {
 
-
     private final HarkachParserService harkachParserService;
 
     @Scheduled(cron = "* 0/20 * ? * *")
@@ -19,7 +18,4 @@ public class HarkachSynchronisationExecutor {
         harkachParserService.loadContent();
         log.info("сохранил файлы");
     }
-
-
-
 }

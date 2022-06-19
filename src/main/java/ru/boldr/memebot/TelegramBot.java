@@ -3,7 +3,6 @@ package ru.boldr.memebot;
 import java.io.File;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.TimeUnit;
 
 import com.google.common.collect.Lists;
 import lombok.RequiredArgsConstructor;
@@ -26,14 +25,13 @@ import ru.boldr.memebot.helpers.JsonHelper;
 import ru.boldr.memebot.model.Command;
 import ru.boldr.memebot.model.entity.BotMessageHistory;
 import ru.boldr.memebot.model.entity.HarkachModHistory;
-import ru.boldr.memebot.repository.HarkachFileHistoryRepo;
 import ru.boldr.memebot.repository.HarkachModHistoryRepo;
 import ru.boldr.memebot.service.HarkachParserService;
 import ru.boldr.memebot.service.HatGameService;
 import ru.boldr.memebot.service.MessageHistoryService;
 import ru.boldr.memebot.service.SpeakService;
+import ru.boldr.memebot.service.TelegramSemaphore;
 import ru.boldr.memebot.service.ThreadComment;
-import ru.boldr.memebot.service.WikiParser;
 
 @Slf4j
 @Component
@@ -44,13 +42,12 @@ public class TelegramBot extends TelegramLongPollingBot {
     private final JsonHelper jsonHelper;
     private final UpdateHandler updateHandler;
     private final HarkachParserService harkachParserService;
-    private final WikiParser wikiparser;
     private final MessageHistoryService messageHistoryService;
     private final HarkachModHistoryRepo harkachModHistoryRepo;
     private final TransactionTemplate transactionTemplate;
     private final SpeakService speakService;
     private final HatGameService hatGameService;
-    private final HarkachFileHistoryRepo harkachFileHistoryRepo;
+    private final TelegramSemaphore telegramSemaphore;
 
     @Override
     public String getBotUsername() {
@@ -62,21 +59,22 @@ public class TelegramBot extends TelegramLongPollingBot {
         return "1472867697:AAH1cY6xZPZ5SB7UgTtoW8mqhA5kRdyp0Kg";
     }
 
+    public void sendAllMedia(String data, String chatId) {
+        var threadUrl = data.split(",")[0];
+        var inputMedias = harkachParserService.getContentFromCurrentThread(threadUrl, chatId);
+        var partition = Lists.partition(inputMedias, 10);
+        partition.forEach(part -> sendMediaGroup(chatId, part));
+    }
+
     @SneakyThrows
     @Override
     public void onUpdateReceived(Update update) {
 
         if (update.hasCallbackQuery()) {
             String data = update.getCallbackQuery().getData();
+            var chatId = update.getCallbackQuery().getMessage().getChatId().toString();
             if (data.toLowerCase().contains("callback")) {
-                var split = data.split(",");
-                var threadUrl = split[0];
-                var chatId = update.getCallbackQuery().getMessage().getChatId().toString();
-                var inputMedias = harkachParserService.getContentFromCurrentThread(threadUrl, chatId);
-                var partition = Lists.partition(inputMedias, 10);
-                partition.forEach(part ->
-                        sendMediaGroup(chatId, part)
-                );
+                sendAllMedia(data, chatId);
             }
         }
 
@@ -130,20 +128,41 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void sendMediaGroup(String chatId, List<InputMedia> part) {
-        try {
-            TimeUnit.MINUTES.sleep(1L);
-            execute(SendMediaGroup.builder()
-                    .chatId(chatId)
-                    .medias(part)
-                    .build());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        telegramSemaphore.executeInLock(() -> {
+            try {
+                execute(SendMediaGroup.builder()
+                        .chatId(chatId)
+                        .medias(part)
+                        .build());
+            } catch (TelegramApiException ex) {
+                ex.printStackTrace();
+            }
+        }, part.size());
+    }
+
+    public void sendMessage(SendMessage message) {
+        telegramSemaphore.executeInLock(() -> {
+            try {
+                execute(message);
+            } catch (TelegramApiException ex) {
+                ex.printStackTrace();
+            }
+        }, 1L);
+    }
+
+    public void sendAnimation(SendAnimation message) {
+        telegramSemaphore.executeInLock(() -> {
+            try {
+                execute(message);
+            } catch (TelegramApiException ex) {
+                ex.printStackTrace();
+            }
+        }, 1L);
     }
 
     private void execute(Update update, String chatId, String command) throws TelegramApiException {
         if (command.toLowerCase(Locale.ROOT).contains(Command.MAN.getCommand())) {
-            execute(new SendAnimation(chatId, new InputFile(new File("files/man.mp4"))));
+            sendAnimation(new SendAnimation(chatId, new InputFile(new File("files/man.mp4"))));
             messageHistoryService.save(BotMessageHistory.builder()
                     .chatId(chatId)
                     .messageId(update.getMessage().getMessageId())
@@ -151,23 +170,22 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
 
         if (Command.MAN_REVERSE.getCommand().equals(command)) {
-            execute(new SendAnimation(chatId, new InputFile(new File("files/man_reverse.mp4"))));
+            sendAnimation(new SendAnimation(chatId, new InputFile(new File("files/man_reverse.mp4"))));
         }
 
         if (Command.KAKASHKULES.getCommand().equals(command)) {
-            execute(new SendMessage(chatId, "http://51.250.107.78/какашкулес"));
+            sendMessage(new SendMessage(chatId, "http://51.250.107.78/какашкулес"));
         }
 
         if (Command.BURGERTRACH.getCommand().equals(command)) {
-            execute(new SendMessage(chatId, "http://51.250.107.78/бургертрах"));
+            sendMessage(new SendMessage(chatId, "http://51.250.107.78/бургертрах"));
         }
 
         if (Command.HARKACH.getCommand().equals(command)) {
             ThreadComment threadComment = harkachParserService.getContent(chatId);
-
-            execute(new SendMessage(chatId, threadComment.picture()));
+            sendMessage(new SendMessage(chatId, threadComment.picture()));
             if (threadComment.comment() != null && !threadComment.comment().isEmpty()) {
-                execute(new SendMessage(chatId, threadComment.comment()));
+                sendMessage(new SendMessage(chatId, threadComment.comment()));
             }
         }
 
@@ -187,8 +205,6 @@ public class TelegramBot extends TelegramLongPollingBot {
 
             transactionTemplate.executeWithoutResult(status ->
                     harkachModHistoryRepo.deleteByChatId(update.getMessage().getChatId().toString()));
-
         }
-
     }
 }
