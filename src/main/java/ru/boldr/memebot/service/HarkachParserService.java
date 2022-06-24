@@ -1,10 +1,13 @@
 package ru.boldr.memebot.service;
 
+import java.io.File;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -18,6 +21,7 @@ import javax.annotation.Nullable;
 import javax.transaction.Transactional;
 
 import lombok.AllArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import one.util.streamex.StreamEx;
 import org.springframework.retry.annotation.Retryable;
@@ -129,12 +133,7 @@ public class HarkachParserService {
     @Nullable
     private InputMedia toInputMedia(CoolFile f) {
         String extension = getExtension(f.getFileName());
-        URL url = null;
-        try {
-            url = new URL("https://2ch.hk" + f.getFileName());
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
+        URL url = getDvachUrl(f.getFileName());
         if (url != null) {
             return getInputMedia(url, extension);
         }
@@ -254,7 +253,7 @@ public class HarkachParserService {
 
     public List<InputMedia> getContentFromCurrentThread(String threadUrl, String chatId) {
         String[] split = threadUrl.split("/");
-        List<InputMedia> inputMedias = new ArrayList<>();
+
 
         String stringNumWithHtml = split[5];
 
@@ -270,25 +269,33 @@ public class HarkachParserService {
 
         threads.forEach(t -> postList.addAll(t.posts()));
 
-        postList.forEach(post -> {
-            inputMedias.addAll(createInputMedia(post));
-        });
 
-        List<CoolFile> coolFiles = StreamEx.of(postList).flatMap(p -> toCoolFiles(p).stream()).toList();
+
+        var coolFiles = StreamEx.of(postList).flatMap(p -> toCoolFiles(p).stream()).toList();
 
         var history = harkachFileHistoryRepo.findAll().stream()
                 .map(HarKachFileHistory::getFileName)
                 .toList();
 
-        var coolFiles1 = StreamEx.of(coolFiles).filter(c -> !history.contains(c.getFileName())).toList();
+        var filteredFiles = StreamEx.of(coolFiles).filter(c -> !history.contains(c.getFileName())).toList();
 
-        if (coolFiles1.isEmpty()) {
+        if (filteredFiles.isEmpty()) {
             return List.of();
         }
 
+        var inputMedia = new ArrayList<InputMedia>();
+        filteredFiles.forEach(file -> {
+            inputMedia.add(createInputMedia(file));
+        });
+
         saveHarkachHistory(chatId, coolFiles);
 
-        return inputMedias;
+
+        return inputMedia;
+    }
+
+    private InputMedia createInputMedia(CoolFile file) {
+        return getInputMedia(getDvachUrl(file.getFileName()),getExtension(file.getFileName()));
     }
 
     private List<CoolFile> toCoolFiles(Post post) {
@@ -302,12 +309,7 @@ public class HarkachParserService {
         files.forEach(f -> {
             String path = f.path();
 
-            URL url = null;
-            try {
-                url = new URL(DVACH + path);
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            }
+            URL url = getDvachUrl(path);
 
             String extension = getExtension(path);
 
@@ -318,6 +320,16 @@ public class HarkachParserService {
         });
 
         return result;
+    }
+
+    private URL getDvachUrl(String path) {
+        URL url = null;
+        try {
+            url = new URL(DVACH + path);
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+        return url;
     }
 
     private InputMedia getInputMedia(URL url, String extension) {
@@ -332,7 +344,9 @@ public class HarkachParserService {
                     .media(url.toString())
                     .parseMode(ParseMode.HTML)
                     .build();
+            case ("webm") -> {
 
+            }
             default -> {
             }
         }
