@@ -1,13 +1,14 @@
 package ru.boldr.memebot.service;
 
+import java.io.DataInputStream;
 import java.io.File;
-import java.io.InputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -23,6 +24,10 @@ import javax.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import net.bramp.ffmpeg.FFmpeg;
+import net.bramp.ffmpeg.FFmpegExecutor;
+import net.bramp.ffmpeg.FFprobe;
+import net.bramp.ffmpeg.builder.FFmpegBuilder;
 import one.util.streamex.StreamEx;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
@@ -32,6 +37,7 @@ import org.telegram.telegrambots.meta.api.objects.media.InputMedia;
 import org.telegram.telegrambots.meta.api.objects.media.InputMediaPhoto;
 import org.telegram.telegrambots.meta.api.objects.media.InputMediaVideo;
 import ru.boldr.memebot.model.CurrentThread;
+import ru.boldr.memebot.model.MediaDto;
 import ru.boldr.memebot.model.Post;
 import ru.boldr.memebot.model.PostContent;
 import ru.boldr.memebot.model.Thread;
@@ -251,9 +257,8 @@ public class HarkachParserService {
                 .toList();
     }
 
-    public List<InputMedia> getContentFromCurrentThread(String threadUrl, String chatId) {
+    public MediaDto getContentFromCurrentThread(String threadUrl, String chatId) {
         String[] split = threadUrl.split("/");
-
 
         String stringNumWithHtml = split[5];
 
@@ -269,8 +274,6 @@ public class HarkachParserService {
 
         threads.forEach(t -> postList.addAll(t.posts()));
 
-
-
         var coolFiles = StreamEx.of(postList).flatMap(p -> toCoolFiles(p).stream()).toList();
 
         var history = harkachFileHistoryRepo.findAll().stream()
@@ -280,22 +283,41 @@ public class HarkachParserService {
         var filteredFiles = StreamEx.of(coolFiles).filter(c -> !history.contains(c.getFileName())).toList();
 
         if (filteredFiles.isEmpty()) {
-            return List.of();
+            return new MediaDto(new ArrayList<>(), new ArrayList<>());
         }
 
         var inputMedia = new ArrayList<InputMedia>();
+
+        var webmPaths = new ArrayList<String>();
+
         filteredFiles.forEach(file -> {
-            inputMedia.add(createInputMedia(file));
+            if (isAvailableToDownloadFile(file) > 0) {
+                switch (getExtension(file.getFileName())) {
+                    case "jpg", "png", "mp4" -> inputMedia.add(createInputMedia(file));
+                    case "webm" -> webmPaths.add(convertWebmToMp4(getDvachUrl(file.getFileName())));
+                }
+            }
         });
 
         saveHarkachHistory(chatId, coolFiles);
 
+        return new MediaDto(inputMedia, webmPaths);
+    }
 
-        return inputMedia;
+    private int isAvailableToDownloadFile(CoolFile file) {
+        String fileName = file.getFileName();
+        URL dvachUrl = getDvachUrl(fileName);
+        int available = 0;
+        try {
+            available = dvachUrl.openStream().available();
+        } catch (IOException e) {
+            log.info(fileName + " не скачать");
+        }
+        return available;
     }
 
     private InputMedia createInputMedia(CoolFile file) {
-        return getInputMedia(getDvachUrl(file.getFileName()),getExtension(file.getFileName()));
+        return getInputMedia(getDvachUrl(file.getFileName()), getExtension(file.getFileName()));
     }
 
     private List<CoolFile> toCoolFiles(Post post) {
@@ -312,10 +334,17 @@ public class HarkachParserService {
             URL url = getDvachUrl(path);
 
             String extension = getExtension(path);
-
-            InputMedia inputMedia = getInputMedia(url, extension);
-            if (inputMedia != null) {
-                result.add(inputMedia);
+            int available = 0;
+            try {
+                available = url.openStream().available();
+            } catch (IOException e) {
+                log.info(url + " не скачать");
+            }
+            if (available > 0) {
+                InputMedia inputMedia = getInputMedia(url, extension);
+                if (inputMedia != null) {
+                    result.add(inputMedia);
+                }
             }
         });
 
@@ -344,13 +373,62 @@ public class HarkachParserService {
                     .media(url.toString())
                     .parseMode(ParseMode.HTML)
                     .build();
-            case ("webm") -> {
-
-            }
             default -> {
             }
         }
         return inputMedia;
+    }
+
+    @SneakyThrows
+    private String convertWebmToMp4(URL url) {
+        File fileCounter = new File("files/webmfiles/");
+
+        File[] files = fileCounter.listFiles();
+        int counter = files.length;
+        DataInputStream dataInputStream = new DataInputStream(url.openStream());
+        byte[] bytes = dataInputStream.readAllBytes();
+        String webmPath = "files/webmfiles/file%d.webm".formatted(counter);
+        FileOutputStream fileOutputStream = new FileOutputStream(webmPath);
+
+        fileOutputStream.write(bytes);
+
+        String absolutePath = new File(webmPath).getAbsolutePath();
+
+        try {
+
+            FFmpeg ffmpeg = new FFmpeg("files/ffmpeg/ffmpeg");
+            FFprobe ffprobe = new FFprobe("files/ffprobe/ffprobe");
+
+            FFmpegBuilder builder = new FFmpegBuilder()
+                    .setInput(ffprobe.probe(absolutePath))     // Filename, or a FFmpegProbeResult
+                    .overrideOutputFiles(true) // Override the output if it exists
+
+                    .addOutput("files/webmfiles/out%d.mp4".formatted(counter))   // Filename for the destination
+                    .setFormat("mp4")        // Format is inferred from filename, or can be set
+                    .setTargetSize(new File(absolutePath).length())  // Aim for a 250KB file
+
+                    .disableSubtitle()       // No subtiles
+
+                    .setAudioChannels(1)         // Mono audio
+                    .setAudioCodec("aac")        // using the aac codec
+                    .setAudioSampleRate(48_000)  // at 48KHz
+                    .setAudioBitRate(32768)      // at 32 kbit/s
+
+                    .setVideoCodec("libx264")     // Video using x264
+                    .setVideoFrameRate(24, 1)     // at 24 frames per second
+                    .setVideoResolution(480, 480) // at 640x480 resolution
+
+                    .setStrict(FFmpegBuilder.Strict.EXPERIMENTAL) // Allow FFmpeg to use experimental specs
+                    .done();
+
+            FFmpegExecutor executor = new FFmpegExecutor(ffmpeg, ffprobe);
+
+// Or run a two-pass encode (which is better quality at the cost of being slower)
+            executor.createTwoPassJob(builder).run();
+        } catch (Throwable e) {
+            log.info(url + "произошла ошибка конвертирования");
+        }
+        return new File(fileCounter.getAbsolutePath() + "/out%d.mp4".formatted(counter)).getAbsolutePath();
     }
 
     public String getExtension(String path) {

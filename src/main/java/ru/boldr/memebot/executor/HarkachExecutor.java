@@ -70,6 +70,16 @@ public class HarkachExecutor {
             URL url = new URL(picture);
 
             var extension = harkachParserService.getExtension(picture);
+            int available = 0;
+            try {
+                available = url.openStream().available();
+            }catch (Exception e){
+                log.info(url + " не скачать");
+            }
+
+            if (available < 1) {
+                return;
+            }
 
             InputStream inputStream = url.openStream();
 
