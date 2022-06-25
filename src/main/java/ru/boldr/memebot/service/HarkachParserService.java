@@ -426,7 +426,7 @@ public class HarkachParserService {
 // Or run a two-pass encode (which is better quality at the cost of being slower)
             executor.createTwoPassJob(builder).run();
         } catch (Throwable e) {
-            log.info(url + "произошла ошибка конвертирования");
+            log.info(e.getLocalizedMessage());
         }
         return new File(fileCounter.getAbsolutePath() + "/out%d.mp4".formatted(counter)).getAbsolutePath();
     }
