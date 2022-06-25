@@ -396,8 +396,8 @@ public class HarkachParserService {
 
         try {
 
-            FFmpeg ffmpeg = new FFmpeg("files/ffmpeg/ffmpeg");
-            FFprobe ffprobe = new FFprobe("files/ffprobe/ffprobe");
+            FFmpeg ffmpeg = new FFmpeg("files/mpeg/ffmpeg");
+            FFprobe ffprobe = new FFprobe("files/probe/ffprobe");
 
             FFmpegBuilder builder = new FFmpegBuilder()
                     .setInput(ffprobe.probe(absolutePath))     // Filename, or a FFmpegProbeResult
