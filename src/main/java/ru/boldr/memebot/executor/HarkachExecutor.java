@@ -1,5 +1,6 @@
 package ru.boldr.memebot.executor;
 
+import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.List;
@@ -73,7 +74,7 @@ public class HarkachExecutor {
             int available = 0;
             try {
                 available = url.openStream().available();
-            }catch (Exception e){
+            } catch (Exception e) {
                 log.info(url + " не скачать");
             }
 
@@ -97,11 +98,19 @@ public class HarkachExecutor {
                                 .replyMarkup(inlineKeyboard)
                                 .build()), 1L);
 
-                case ("mp4"), ("webm") -> telegramSemaphore
+                case ("mp4") -> telegramSemaphore
                         .executeInLock(() -> telegramBot.executeAsync(SendVideo.builder()
                                 .chatId(chatId)
                                 .caption(comment)
                                 .video(inputFile)
+                                .parseMode(ParseMode.HTML)
+                                .replyMarkup(inlineKeyboard)
+                                .build()), 1L);
+                case ("webm") -> telegramSemaphore
+                        .executeInLock(() -> telegramBot.executeAsync(SendVideo.builder()
+                                .chatId(chatId)
+                                .caption(comment)
+                                .video(new InputFile(new File(harkachParserService.convertWebmToMp4(url))))
                                 .parseMode(ParseMode.HTML)
                                 .replyMarkup(inlineKeyboard)
                                 .build()), 1L);

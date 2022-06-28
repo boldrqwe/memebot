@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -56,10 +57,7 @@ public class HarkachParserService {
 
     private final static String MAIN_URL = "https://2ch.hk/b/threads.json";
 
-    private final static String POLITACH = "https://2ch.hk/po/threads.json";
-
     private final static String THREAD_URL_RANDOM = "https://2ch.hk/b/res/";
-    private final static String THREAD_URL_POLITACH = "https://2ch.hk/po/res/";
     private final static String DVACH = "https://2ch.hk";
 
     public final static Set<String> coolSet = Set.of("проиграл", " лол ", "смешно", "орнул", "вголосину", "lol");
@@ -156,7 +154,7 @@ public class HarkachParserService {
         URI uri = null;
         try {
             uri = Optional.of(new URI(THREAD_URL_RANDOM + num + ".json"))
-                    .orElse(new URI(THREAD_URL_POLITACH + num + ".json"));
+                    .orElse(null);
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
@@ -234,21 +232,17 @@ public class HarkachParserService {
 
     public List<CurrentThread> getCurrentThreads() {
         URI random = null;
-        URI politach = null;
         try {
             random = new URI(MAIN_URL);
-            politach = new URI(POLITACH);
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
 
         Threads randomThreads = restTemplate.getForObject(Objects.requireNonNull(random), Threads.class);
-        Threads politachThreads = restTemplate.getForObject(Objects.requireNonNull(politach), Threads.class);
 
         List<Thread> threads = null;
         if (randomThreads != null) {
             threads = randomThreads.threads();
-            threads.addAll(Objects.requireNonNull(politachThreads).threads());
         }
 
         return StreamEx.of(Objects.requireNonNull(threads))
@@ -294,7 +288,7 @@ public class HarkachParserService {
             if (isAvailableToDownloadFile(file) > 0) {
                 switch (getExtension(file.getFileName())) {
                     case "jpg", "png", "mp4" -> inputMedia.add(createInputMedia(file));
-                    case "webm" -> webmPaths.add(convertWebmToMp4(getDvachUrl(file.getFileName())));
+                    case "webm" -> webmPaths.add(file.getFileName());
                 }
             }
         });
@@ -302,6 +296,11 @@ public class HarkachParserService {
         saveHarkachHistory(chatId, coolFiles);
 
         return new MediaDto(inputMedia, webmPaths);
+    }
+
+    public List<String> processWebm(List<String> webms) {
+        StreamEx.of(webms).parallel().forEach(w -> convertWebmToMp4(getDvachUrl(w)));
+        return webms;
     }
 
     private int isAvailableToDownloadFile(CoolFile file) {
@@ -380,14 +379,13 @@ public class HarkachParserService {
     }
 
     @SneakyThrows
-    private String convertWebmToMp4(URL url) {
+    public String convertWebmToMp4(URL url) {
         File fileCounter = new File("files/webmfiles/");
 
-        File[] files = fileCounter.listFiles();
-        int counter = files.length;
+        var uid = UUID.randomUUID().toString();
         DataInputStream dataInputStream = new DataInputStream(url.openStream());
         byte[] bytes = dataInputStream.readAllBytes();
-        String webmPath = "files/webmfiles/file%d.webm".formatted(counter);
+        String webmPath = "files/webmfiles/file%d.webm".formatted(uid);
         FileOutputStream fileOutputStream = new FileOutputStream(webmPath);
 
         fileOutputStream.write(bytes);
@@ -403,12 +401,11 @@ public class HarkachParserService {
                     .setInput(ffprobe.probe(absolutePath))     // Filename, or a FFmpegProbeResult
                     .overrideOutputFiles(true) // Override the output if it exists
 
-                    .addOutput("files/webmfiles/out%d.mp4".formatted(counter))   // Filename for the destination
+                    .addOutput("files/webmfiles/out%s.mp4".formatted(uid))   // Filename for the destination
                     .setFormat("mp4")        // Format is inferred from filename, or can be set
-                    .setTargetSize(new File(absolutePath).length())  // Aim for a 250KB file
+                    .setTargetSize(new File(absolutePath).length() / 2)  // Aim for a 250KB file
 
                     .disableSubtitle()       // No subtiles
-
                     .setAudioChannels(1)         // Mono audio
                     .setAudioCodec("aac")        // using the aac codec
                     .setAudioSampleRate(48_000)  // at 48KHz
@@ -416,7 +413,7 @@ public class HarkachParserService {
 
                     .setVideoCodec("libx264")     // Video using x264
                     .setVideoFrameRate(24, 1)     // at 24 frames per second
-                    .setVideoResolution(480, 480) // at 640x480 resolution
+                    .setVideoResolution(360, 360) // at 640x480 resolution
 
                     .setStrict(FFmpegBuilder.Strict.EXPERIMENTAL) // Allow FFmpeg to use experimental specs
                     .done();
@@ -424,11 +421,11 @@ public class HarkachParserService {
             FFmpegExecutor executor = new FFmpegExecutor(ffmpeg, ffprobe);
 
 // Or run a two-pass encode (which is better quality at the cost of being slower)
-            executor.createTwoPassJob(builder).run();
+            executor.createJob(builder).run();
         } catch (Throwable e) {
             log.info(e.getLocalizedMessage());
         }
-        return new File(fileCounter.getAbsolutePath() + "/out%d.mp4".formatted(counter)).getAbsolutePath();
+        return new File(fileCounter.getAbsolutePath() + "/out%s.mp4".formatted(uid)).getAbsolutePath();
     }
 
     public String getExtension(String path) {

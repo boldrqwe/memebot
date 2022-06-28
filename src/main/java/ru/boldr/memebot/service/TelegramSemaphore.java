@@ -5,9 +5,10 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import io.github.bucket4j.local.LocalBucket;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
+import lombok.extern.log4j.Log4j2;
 
 @RequiredArgsConstructor
+@Log4j2
 public class TelegramSemaphore {
 
     private final LocalBucket bucket;
@@ -21,7 +22,7 @@ public class TelegramSemaphore {
             bucket.tryConsume(count);
             function.run();
         } catch (Exception e) {
-            e.printStackTrace();
+            log.info(e.getLocalizedMessage());
         } finally {
             lock.unlock();
         }
