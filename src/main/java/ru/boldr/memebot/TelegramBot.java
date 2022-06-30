@@ -72,12 +72,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         return "1472867697:AAH1cY6xZPZ5SB7UgTtoW8mqhA5kRdyp0Kg";
     }
 
-    @SneakyThrows
     public void sendAllMedia(String data, String chatId) {
-        executeAsync(SendMessage.builder()
-                .chatId(chatId)
-                .text("Скачивание скоро начнется...")
-                .build());
 
         var threadUrl = data.split(",")[0];
         var mediaDto = harkachParserService.getContentFromCurrentThread(threadUrl, chatId);
@@ -85,10 +80,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         int inputMediaSize = mediaDto.inputMedia().size();
         int webmSize = mediaDto.webmPaths().size();
 
-        executeAsync(SendMessage.builder()
-                .chatId(chatId)
-                .text("Найдено %d файлов".formatted(inputMediaSize + webmSize))
-                .build());
+        getMessageCompletableFuture(chatId, inputMediaSize, webmSize);
 
         var inputMedia = mediaDto.inputMedia();
 
@@ -104,6 +96,17 @@ public class TelegramBot extends TelegramLongPollingBot {
         var webms = getWebms(fileIds);
 
         partitionAndSend(chatId, webms);
+    }
+
+    private void getMessageCompletableFuture(String chatId, int inputMediaSize, int webmSize) {
+        try {
+            executeAsync(SendMessage.builder()
+                    .chatId(chatId)
+                    .text("Найдено %d файлов\n скачивание скоро начнется".formatted(inputMediaSize + webmSize))
+                    .build());
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
     }
 
     private List<InputMedia> getWebms(ArrayList<String> fileIds) {
