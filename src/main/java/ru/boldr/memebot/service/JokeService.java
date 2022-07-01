@@ -74,7 +74,7 @@ public class JokeService {
         String firstName = from.getFirstName() == null ? "" : from.getFirstName();
         String lastName = from.getLastName() == null ? "" : from.getLastName();
         FunnyJoke funnyJoke = FunnyJoke.builder()
-                .userId(from.getId())
+                .userId(from.getId().intValue())
                 .chatId(replyToMessage.getChatId())
                 .messageId(replyToMessage.getMessageId())
                 .username(firstName + " " + lastName)

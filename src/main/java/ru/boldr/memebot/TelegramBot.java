@@ -69,7 +69,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     @Override
     public String getBotToken() {
-        return "1472867697:AAH1cY6xZPZ5SB7UgTtoW8mqhA5kRdyp0Kg";
+        return "1472867697:AAGSEbkUAl2v0NsFwYn-L8WTTl0VGiv3ZaQ";
     }
 
     public void sendAllMedia(String data, String chatId) {
@@ -122,11 +122,11 @@ public class TelegramBot extends TelegramLongPollingBot {
         var fileIds = new ArrayList<String>();
         webmPaths.forEach(path -> telegramSemaphore.executeInLock(() -> {
             try {
-                CompletableFuture<Message> messageCompletableFuture = this.executeAsync(SendVideo.builder()
+                var message = this.execute(SendVideo.builder()
                         .chatId("-618520976")
                         .video(new InputFile(new File(path)))
                         .build());
-                fileIds.add(messageCompletableFuture.get().getVideo().getFileId());
+                fileIds.add(message.getVideo().getFileId());
             } catch (Exception e) {
                 log.error(e.getLocalizedMessage());
             }
