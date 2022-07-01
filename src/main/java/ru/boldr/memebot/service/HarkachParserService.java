@@ -385,7 +385,7 @@ public class HarkachParserService {
         var uid = UUID.randomUUID().toString();
         DataInputStream dataInputStream = new DataInputStream(url.openStream());
         byte[] bytes = dataInputStream.readAllBytes();
-        String webmPath = "files/webmfiles/file%d.webm".formatted(uid);
+        String webmPath = "files/webmfiles/file%s.webm".formatted();
         FileOutputStream fileOutputStream = new FileOutputStream(webmPath);
 
         fileOutputStream.write(bytes);

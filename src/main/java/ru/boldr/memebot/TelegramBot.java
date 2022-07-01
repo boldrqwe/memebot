@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.common.collect.Lists;
@@ -26,7 +25,6 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.methods.send.SendVideo;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
-import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.media.InputMedia;
 import org.telegram.telegrambots.meta.api.objects.media.InputMediaVideo;
@@ -69,128 +67,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     @Override
     public String getBotToken() {
-        return "1472867697:AAGSEbkUAl2v0NsFwYn-L8WTTl0VGiv3ZaQ";
-    }
-
-    public void sendAllMedia(String data, String chatId) {
-
-        var threadUrl = data.split(",")[0];
-        var mediaDto = harkachParserService.getContentFromCurrentThread(threadUrl, chatId);
-
-        int inputMediaSize = mediaDto.inputMedia().size();
-        int webmSize = mediaDto.webmPaths().size();
-
-        getMessageCompletableFuture(chatId, inputMediaSize, webmSize);
-
-        var inputMedia = mediaDto.inputMedia();
-
-        if (inputMediaSize == 1) {
-            sendOneFile(chatId, inputMedia);
-            return;
-        }
-
-        partitionAndSend(chatId, inputMedia);
-        var webmPaths = mediaDto.webmPaths();
-        var processedWebmPaths = harkachParserService.processWebm(webmPaths);
-        var fileIds = getfileIds(processedWebmPaths);
-        var webms = getWebms(fileIds);
-
-        partitionAndSend(chatId, webms);
-    }
-
-    private void getMessageCompletableFuture(String chatId, int inputMediaSize, int webmSize) {
-        try {
-            executeAsync(SendMessage.builder()
-                    .chatId(chatId)
-                    .text("Найдено %d файлов\n скачивание скоро начнется".formatted(inputMediaSize + webmSize))
-                    .build());
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private List<InputMedia> getWebms(ArrayList<String> fileIds) {
-        List<InputMedia> webms = fileIds.stream().map(path -> {
-            InputMedia media;
-            media = new InputMediaVideo(path);
-            return media;
-        }).toList();
-        return webms;
-    }
-
-    private ArrayList<String> getfileIds(List<String> webmPaths) {
-        var fileIds = new ArrayList<String>();
-        webmPaths.forEach(path -> telegramSemaphore.executeInLock(() -> {
-            try {
-                var message = this.execute(SendVideo.builder()
-                        .chatId("-618520976")
-                        .video(new InputFile(new File(path)))
-                        .build());
-                fileIds.add(message.getVideo().getFileId());
-            } catch (Exception e) {
-                log.error(e.getLocalizedMessage());
-            }
-
-        }, 1L));
-        return fileIds;
-    }
-
-    private void partitionAndSend(String chatId, List<InputMedia> medias) {
-        var partition = Lists.partition(medias, 10);
-        var size = partition.size();
-        var page = new AtomicInteger();
-        for (var part : partition) {
-            if (part.size() > 1) {
-                sendMediaGroup(chatId, part, page.get() + 1, size);
-                page.getAndIncrement();
-            } else {
-                Integer integer = page.get();
-                sendOneFile(chatId, part, integer + 1, size);
-                page.getAndIncrement();
-            }
-        }
-    }
-
-    private void sendOneFile(String chatId, ArrayList<InputMedia> inputMedias) {
-        sendOneFile(chatId, inputMedias, null, null);
-    }
-
-    private void sendOneFile(String chatId, List<InputMedia> inputMedias, Integer page, Integer size) {
-        InputMedia inputMedia = inputMedias.stream().findFirst().orElse(null);
-        InputStream newMediaStream = inputMedia.getNewMediaStream();
-        String type = inputMedia.getType();
-        switch (type) {
-            case ("jpg"), ("png") -> {
-                SendPhoto file = SendPhoto.builder()
-                        .chatId(chatId)
-                        .photo(new InputFile(newMediaStream, "file"))
-                        .parseMode(ParseMode.HTML)
-                        .build();
-
-                if (page != null) {
-                    file.setCaption(PAGING.formatted(page, size));
-                }
-
-                telegramSemaphore.executeInLock(() -> executeAsync(file), 1L);
-            }
-
-            case ("mp4"), ("webm") -> {
-                SendVideo file = SendVideo.builder()
-                        .chatId(chatId)
-                        .video(new InputFile(newMediaStream, "file"))
-                        .parseMode(ParseMode.HTML)
-                        .caption(PAGING.formatted(page, size))
-                        .build();
-
-                if (page != null) {
-                    file.setCaption(PAGING.formatted(page, size));
-                }
-
-                telegramSemaphore.executeInLock(() -> executeAsync(file), 1L);
-            }
-
-            default -> throw new IllegalStateException("Unexpected value: " + type);
-        }
+        return "1472867697:AAFAopJfJBvJ97iCefJG14dTuby-HksFXKY";
     }
 
     @SneakyThrows
@@ -258,6 +135,127 @@ public class TelegramBot extends TelegramLongPollingBot {
                     chatId,
                     text.toLowerCase(Locale.ROOT)
             );
+        }
+    }
+
+    public void sendAllMedia(String data, String chatId) {
+
+        var threadUrl = data.split(",")[0];
+        var mediaDto = harkachParserService.getContentFromCurrentThread(threadUrl, chatId);
+
+        int inputMediaSize = mediaDto.inputMedia().size();
+        int webmSize = mediaDto.webmPaths().size();
+
+        telegramSemaphore.executeInLock(() -> getMessageCompletableFuture(chatId, inputMediaSize, webmSize), 1);
+
+        var inputMedia = mediaDto.inputMedia();
+
+        if (inputMediaSize == 1) {
+            sendOneFile(chatId, inputMedia);
+            return;
+        }
+
+        partitionAndSend(chatId, inputMedia);
+        var webmPaths = mediaDto.webmPaths();
+        var processedWebmPaths = harkachParserService.processWebm(webmPaths);
+        var fileIds = getfileIds(processedWebmPaths);
+        var webms = getWebms(fileIds);
+
+        partitionAndSend(chatId, webms);
+    }
+
+    private void getMessageCompletableFuture(String chatId, int inputMediaSize, int webmSize) {
+        try {
+            executeAsync(SendMessage.builder()
+                    .chatId(chatId)
+                    .text("Найдено %d файлов\n скачивание скоро начнется".formatted(inputMediaSize + webmSize))
+                    .build());
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private List<InputMedia> getWebms(ArrayList<String> fileIds) {
+        List<InputMedia> webms = fileIds.stream().map(path -> {
+            InputMedia media;
+            media = new InputMediaVideo(path);
+            return media;
+        }).toList();
+        return webms;
+    }
+
+    private ArrayList<String> getfileIds(List<String> webmPaths) {
+        var fileIds = new ArrayList<String>();
+        webmPaths.forEach(path -> telegramSemaphore.executeInLock(() -> {
+            try {
+                var message = this.execute(SendVideo.builder()
+                        .chatId("-618520976")
+                        .video(new InputFile(new File(path)))
+                        .build());
+                fileIds.add(message.getVideo().getFileId());
+            } catch (Exception e) {
+                log.error(e.getLocalizedMessage());
+            }
+
+        }, 1L));
+        return fileIds;
+    }
+
+    private void partitionAndSend(String chatId, List<InputMedia> medias) {
+        var partition = Lists.partition(medias, 6);
+        var size = partition.size();
+        var page = new AtomicInteger();
+        for (var part : partition) {
+            if (part.size() > 1) {
+                sendMediaGroup(chatId, part, page.get() + 1, size);
+                page.getAndIncrement();
+            } else {
+                Integer integer = page.get();
+                sendOneFile(chatId, part, integer + 1, size);
+                page.getAndIncrement();
+            }
+        }
+    }
+
+    private void sendOneFile(String chatId, ArrayList<InputMedia> inputMedias) {
+        sendOneFile(chatId, inputMedias, null, null);
+    }
+
+    private void sendOneFile(String chatId, List<InputMedia> inputMedias, Integer page, Integer size) {
+        InputMedia inputMedia = inputMedias.stream().findFirst().orElse(null);
+        InputStream newMediaStream = inputMedia.getNewMediaStream();
+        String type = inputMedia.getType();
+        switch (type) {
+            case ("photo") -> {
+                SendPhoto file = SendPhoto.builder()
+                        .chatId(chatId)
+                        .photo(new InputFile(newMediaStream, "file"))
+                        .parseMode(ParseMode.HTML)
+                        .build();
+
+                if (page != null) {
+                    file.setCaption(PAGING.formatted(page, size));
+                }
+
+                telegramSemaphore.executeInLock(() -> executeAsync(file), 1L);
+            }
+
+            case ("video") -> {
+                SendVideo file = SendVideo.builder()
+                        .chatId(chatId)
+                        .video(new InputFile(newMediaStream, "file"))
+                        .parseMode(ParseMode.HTML)
+                        .caption(PAGING.formatted(page, size))
+                        .build();
+
+                if (page != null) {
+                    file.setCaption(PAGING.formatted(page, size));
+                }
+
+                telegramSemaphore.executeInLock(() -> executeAsync(file), 1L);
+            }
+
+            default -> throw new IllegalStateException("Unexpected value: " + type);
         }
     }
 
