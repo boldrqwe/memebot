@@ -75,7 +75,7 @@ public class HarkachExecutor {
             try {
                 available = url.openStream().available();
             } catch (Exception e) {
-                log.info(url + " не скачать");
+                log.info(url + " can't download");
             }
 
             if (available < 1) {
@@ -88,7 +88,7 @@ public class HarkachExecutor {
 
             String comment = harkachMarkupConverter.convertToTgHtml(threadComment.comment());
 
-            log.info("отправляю " + picture);
+            log.info("send " + picture);
 
             switch (extension) {
                 case ("jpg"), ("png") -> telegramSemaphore

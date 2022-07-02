@@ -169,7 +169,7 @@ public class HarkachParserService {
 
     public void loadContent() {
         List<CurrentThread> currentThreads = getCurrentThreads();
-        log.info("получено тредов:{}", currentThreads.size());
+        log.info("received threads:{}", currentThreads.size());
         List<Post> posts = getPosts(currentThreads);
 
         Map<Long, Post> numToPost = StreamEx.of(posts).toMap(Post::num, Function.identity());
