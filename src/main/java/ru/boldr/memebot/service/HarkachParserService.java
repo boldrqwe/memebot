@@ -15,7 +15,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -382,10 +381,10 @@ public class HarkachParserService {
     public String convertWebmToMp4(URL url) {
         File fileCounter = new File("files/webmfiles/");
 
-        var uid = UUID.randomUUID().toString();
+        var length = fileCounter.listFiles().length;
         DataInputStream dataInputStream = new DataInputStream(url.openStream());
         byte[] bytes = dataInputStream.readAllBytes();
-        String webmPath = "files/webmfiles/file%s.webm".formatted(uid);
+        String webmPath = "files/webmfiles/file%d.webm".formatted(length);
         FileOutputStream fileOutputStream = new FileOutputStream(webmPath);
 
         fileOutputStream.write(bytes);
@@ -401,7 +400,7 @@ public class HarkachParserService {
                     .setInput(ffprobe.probe(absolutePath))     // Filename, or a FFmpegProbeResult
                     .overrideOutputFiles(true) // Override the output if it exists
 
-                    .addOutput("files/webmfiles/out%s.mp4".formatted(uid))   // Filename for the destination
+                    .addOutput("files/webmfiles/out%d.mp4".formatted(length))   // Filename for the destination
                     .setFormat("mp4")        // Format is inferred from filename, or can be set
                     .setTargetSize(new File(absolutePath).length() / 2)  // Aim for a 250KB file
 
@@ -425,7 +424,7 @@ public class HarkachParserService {
         } catch (Throwable e) {
             log.error(e.getLocalizedMessage());
         }
-        return new File(fileCounter.getAbsolutePath() + "/out%s.mp4".formatted(uid)).getAbsolutePath();
+        return new File(fileCounter.getAbsolutePath() + "/out%d.mp4".formatted(length)).getAbsolutePath();
     }
 
     public String getExtension(String path) {

@@ -191,6 +191,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         var fileIds = new ArrayList<String>();
         webmPaths.forEach(path -> telegramSemaphore.executeInLock(() -> {
             try {
+                log.info("webm - {}", path);
                 var message = this.execute(SendVideo.builder()
                         .chatId("-618520976")
                         .video(new InputFile(new File(path)))
@@ -208,15 +209,17 @@ public class TelegramBot extends TelegramLongPollingBot {
         var partition = Lists.partition(medias, 6);
         var size = partition.size();
         var page = new AtomicInteger();
+
         for (var part : partition) {
+            log.info("path {} from {}", page, size);
+            part.forEach(p -> log.info(p.getMedia()));
             if (part.size() > 1) {
                 sendMediaGroup(chatId, part, page.get() + 1, size);
-                page.getAndIncrement();
             } else {
-                Integer integer = page.get();
+                var integer = page.get();
                 sendOneFile(chatId, part, integer + 1, size);
-                page.getAndIncrement();
             }
+            page.getAndIncrement();
         }
     }
 
