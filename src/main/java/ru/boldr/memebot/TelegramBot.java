@@ -148,6 +148,8 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         telegramSemaphore.executeInLock(() -> getMessageCompletableFuture(chatId, inputMediaSize, webmSize), 1);
 
+        log.info("find %d files, webm - %d  other %d".formatted(inputMediaSize + webmSize, webmSize, inputMediaSize));
+
         var inputMedia = mediaDto.inputMedia();
 
         if (inputMediaSize == 1) {
@@ -157,10 +159,11 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         partitionAndSend(chatId, inputMedia);
         var webmPaths = mediaDto.webmPaths();
+        log.info("start process webms");
         var processedWebmPaths = harkachParserService.processWebm(webmPaths);
         var fileIds = getfileIds(processedWebmPaths);
         var webms = getWebms(fileIds);
-
+        log.info("start send webms");
         partitionAndSend(chatId, webms);
     }
 

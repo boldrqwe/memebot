@@ -385,7 +385,7 @@ public class HarkachParserService {
         var uid = UUID.randomUUID().toString();
         DataInputStream dataInputStream = new DataInputStream(url.openStream());
         byte[] bytes = dataInputStream.readAllBytes();
-        String webmPath = "files/webmfiles/file%s.webm".formatted();
+        String webmPath = "files/webmfiles/file%s.webm".formatted(uid);
         FileOutputStream fileOutputStream = new FileOutputStream(webmPath);
 
         fileOutputStream.write(bytes);
@@ -423,7 +423,7 @@ public class HarkachParserService {
 // Or run a two-pass encode (which is better quality at the cost of being slower)
             executor.createJob(builder).run();
         } catch (Throwable e) {
-            log.info(e.getLocalizedMessage());
+            log.error(e.getLocalizedMessage());
         }
         return new File(fileCounter.getAbsolutePath() + "/out%s.mp4".formatted(uid)).getAbsolutePath();
     }
