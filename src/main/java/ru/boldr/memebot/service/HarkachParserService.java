@@ -56,7 +56,7 @@ public class HarkachParserService {
 
     private final static String MAIN_URL = "https://beta.2ch.hk/b/threads.json";
 
-    private final static String THREAD_URL_RANDOM = "https://beta.2ch.hk/b/res/";
+    private final static String THREAD_URL_RANDOM = "https://2ch.hk/b/res/";
     private final static String DVACH = "https://beta.2ch.hk";
 
     public final static Set<String> coolSet = Set.of("проиграл", " лол ", "смешно", "орнул", "вголосину", "lol");
@@ -319,6 +319,9 @@ public class HarkachParserService {
     }
 
     private List<CoolFile> toCoolFiles(Post post) {
+        if (post.files() == null) {
+            return List.of();
+        }
         return post.files().stream().map(this::toCoolFile).toList();
     }
 
