@@ -158,13 +158,13 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
 
         partitionAndSend(chatId, inputMedia);
-        var webmPaths = mediaDto.webmPaths();
-        log.info("start process webms");
-        var processedWebmPaths = harkachParserService.processWebm(webmPaths);
-        var fileIds = getfileIds(processedWebmPaths);
-        var webms = getWebms(fileIds);
-        log.info("start send webms");
-        partitionAndSend(chatId, webms);
+//        var webmPaths = mediaDto.webmPaths();
+//        log.info("start process webms");
+//        var processedWebmPaths = harkachParserService.processWebm(webmPaths);
+//        var fileIds = getfileIds(processedWebmPaths);
+//        var webms = getWebms(fileIds);
+//        log.info("start send webms");
+//        partitionAndSend(chatId, webms);
     }
 
     private void getMessageCompletableFuture(String chatId, int inputMediaSize, int webmSize) {
