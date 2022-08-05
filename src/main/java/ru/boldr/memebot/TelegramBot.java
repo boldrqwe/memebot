@@ -1,18 +1,36 @@
 package ru.boldr.memebot;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.common.collect.Lists;
+import com.google.common.io.Files;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import one.util.streamex.StreamEx;
+import org.apache.http.HttpEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
+import org.apache.http.entity.mime.content.ContentBody;
+import org.apache.http.entity.mime.content.StringBody;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.aspectj.util.FileUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -206,20 +224,75 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void partitionAndSend(String chatId, List<InputMedia> medias) {
-        var partition = Lists.partition(medias, 6);
-        var size = partition.size();
-        var page = new AtomicInteger();
+        var extensionToInputMedia =
+                StreamEx.of(medias).groupingBy(m -> Files.getFileExtension(m.getMedia()));
 
-        for (var part : partition) {
-            log.info("path {} from {}", page, size);
-            part.forEach(p -> log.info(p.getMedia()));
-            if (part.size() > 1) {
-                sendMediaGroup(chatId, part, page.get() + 1, size);
-            } else {
-                var integer = page.get();
-                sendOneFile(chatId, part, integer + 1, size);
+        extensionToInputMedia.keySet().forEach(key -> {
+            var inputMedias = extensionToInputMedia.get(key);
+            var partition = Lists.partition(inputMedias, 6);
+            var size = partition.size();
+            var page = new AtomicInteger();
+
+            for (var part : partition) {
+                log.info("path {} from {}", page, size);
+                part.forEach(p -> log.info(p.getMedia()));
+                if (part.size() > 1) {
+                    sendMediaGroup(chatId, part, page.get() + 1, size);
+//                    sendFormData(chatId, part);
+                } else {
+                    var integer = page.get();
+                    sendOneFile(chatId, part, integer + 1, size);
+                }
+                page.getAndIncrement();
             }
-            page.getAndIncrement();
+        });
+    }
+
+    @SneakyThrows
+    private void sendFormData(String chatId, List<InputMedia> part) {
+        CloseableHttpClient httpClient = HttpClients.createDefault();
+        HttpPost uploadFile = new HttpPost("https://api.telegram.org/bot" + getBotToken() + "/sendDocument");
+        MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+        builder.addTextBody("chat_id", chatId);
+        builder.addPart(chatId, new StringBody(chatId, ContentType.TEXT_PLAIN));
+
+
+
+// This attaches the file to the POST:
+        part.forEach(inputMedia -> {
+            var media = inputMedia.getMedia();
+            var url = getUrl(media);
+            var inputStream = getInputStream(url);
+            builder.addBinaryBody(
+                    "file",
+                    inputStream,
+                    ContentType.APPLICATION_OCTET_STREAM,
+                    media
+            );
+        });
+
+        HttpEntity multipart = builder.build();
+        uploadFile.setEntity(multipart);
+        CloseableHttpResponse response = httpClient.execute(uploadFile);
+        HttpEntity responseEntity = response.getEntity();
+        System.out.println("");
+    }
+
+    private static InputStream getInputStream(URL url) {
+        InputStream inputStream;
+        try {
+            inputStream = url.openStream();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return inputStream;
+    }
+
+    private URL getUrl(@NonNull String inputMedia) {
+        try {
+            return new URL(inputMedia);
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
         }
     }
 

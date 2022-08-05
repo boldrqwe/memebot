@@ -79,7 +79,7 @@ public class HarkachParserService {
         String fileName;
         String comment;
         if (first.isPresent()) {
-            fileName = "https://2ch.hk" + first.get().getFileName();
+            fileName = DVACH + first.get().getFileName();
 
             harkachFileHistoryRepo.save(
                     HarKachFileHistory.builder()
@@ -149,21 +149,30 @@ public class HarkachParserService {
         return Optional.ofNullable(currentThread).orElse(new CurrentThread(List.of()));
     }
 
+    @Nullable
     private CurrentThread getCurrentThread(Long num) {
-        URI uri = null;
+        URI uri = getUri(num);
+        return getCurrentThread(uri);
+    }
+
+    @Nullable
+    private CurrentThread getCurrentThread(URI uri) {
         try {
-            uri = Optional.of(new URI(THREAD_URL_RANDOM + num + ".json"))
-                    .orElse(null);
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
-        }
-        CurrentThread forObject = null;
-        try {
-            forObject = restTemplate.getForObject(Objects.requireNonNull(uri), CurrentThread.class);
+            return restTemplate.getForObject(Objects.requireNonNull(uri), CurrentThread.class);
         } catch (Exception e) {
             log.warn(e.getMessage());
         }
-        return forObject;
+        return null;
+    }
+
+    @Nullable
+    private static URI getUri(Long num) {
+        try {
+            return Optional.of(new URI(THREAD_URL_RANDOM + num + ".json"))
+                    .orElse(null);
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void loadContent() {
@@ -230,12 +239,7 @@ public class HarkachParserService {
     }
 
     public List<CurrentThread> getCurrentThreads() {
-        URI random = null;
-        try {
-            random = new URI(MAIN_URL);
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
-        }
+        URI random = getRandomUri();
 
         Threads randomThreads = restTemplate.getForObject(Objects.requireNonNull(random), Threads.class);
 
@@ -248,6 +252,15 @@ public class HarkachParserService {
                 .map(this::getCurrentThread)
                 .remove(t -> t.threads().isEmpty())
                 .toList();
+    }
+
+    private URI getRandomUri() {
+        try {
+            return new URI(MAIN_URL);
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public MediaDto getContentFromCurrentThread(String threadUrl, String chatId) {
