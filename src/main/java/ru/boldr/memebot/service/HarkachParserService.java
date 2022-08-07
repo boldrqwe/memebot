@@ -54,12 +54,13 @@ import ru.boldr.memebot.repository.HarkachFileHistoryRepo;
 @Transactional
 public class HarkachParserService {
 
-    private final static String MAIN_URL = "https://beta.2ch.hk/b/threads.json";
+    private final static String MAIN_URL = "https://2ch.hk/b/threads.json";
 
-    private final static String THREAD_URL_RANDOM = "https://beta.2ch.hk/b/res/";
-    private final static String DVACH = "https://beta.2ch.hk";
+    private final static String THREAD_URL_RANDOM = "https://2ch.hk/b/res/";
+    private final static String DVACH = "https://2ch.hk";
 
-    public final static Set<String> coolSet = Set.of("проиграл", " лол ", "смешно", "орнул", "вголосину", "lol");
+    public final static Set<String> coolSet = Set.of("проиграл", " лол ", "смешно", "орнул", "вголосину", "lol", "webm",
+            "засмеялся", "шебм");
 
     private final RestTemplate restTemplate = new RestTemplate();
     private final HarkachFileHistoryRepo harkachFileHistoryRepo;
