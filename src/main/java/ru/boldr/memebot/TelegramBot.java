@@ -81,7 +81,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         return "MementosFunniestForMeBot";
     }
 
-    @Value("${bot.token}")
+    @Value("${bot_token}")
     private String BOT_TOKEN;
 
     @Override
