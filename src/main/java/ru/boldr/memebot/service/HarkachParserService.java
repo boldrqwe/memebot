@@ -72,7 +72,7 @@ public class HarkachParserService {
         List<CoolFile> coolFiles = coolFileRepo.findAll();
 
         List<String> history = harkachFileHistoryRepo.findAllByChatId(chatId)
-                .stream().map(HarKachFileHistory::getFileName).collect(Collectors.toList());
+                .stream().map(HarKachFileHistory::getFileName).toList();
 
         List<CoolFile> coolFiles1 = StreamEx.of(coolFiles).filter(cf -> !history.contains(cf.getFileName())).toList();
         Optional<CoolFile> first = coolFiles1.stream().findFirst();

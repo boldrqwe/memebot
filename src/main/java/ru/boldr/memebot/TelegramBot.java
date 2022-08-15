@@ -4,14 +4,13 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.common.collect.Lists;
@@ -26,13 +25,12 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
-import org.apache.http.entity.mime.content.ContentBody;
 import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.aspectj.util.FileUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -83,9 +81,12 @@ public class TelegramBot extends TelegramLongPollingBot {
         return "MementosFunniestForMeBot";
     }
 
+    @Value("${bot.token}")
+    private String BOT_TOKEN;
+
     @Override
     public String getBotToken() {
-        return "1472867697:AAFAopJfJBvJ97iCefJG14dTuby-HksFXKY";
+        return BOT_TOKEN;
     }
 
     @SneakyThrows
@@ -107,7 +108,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             StreamEx.of(Objects.requireNonNull(file.listFiles())).forEach(File::delete);
         }
 
-        if (update.hasMessage()) {
+        if (update.hasMessage() && Objects.nonNull(update.getMessage().getText())) {
 
             var message = update.getMessage();
             var chatId = message.getChatId().toString();
@@ -255,8 +256,6 @@ public class TelegramBot extends TelegramLongPollingBot {
         MultipartEntityBuilder builder = MultipartEntityBuilder.create();
         builder.addTextBody("chat_id", chatId);
         builder.addPart(chatId, new StringBody(chatId, ContentType.TEXT_PLAIN));
-
-
 
 // This attaches the file to the POST:
         part.forEach(inputMedia -> {
