@@ -28,7 +28,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_USERNAME }}/memebot:latest
+          tags: boldr/memebot:latest
           dockerfile: Dockerfile
 
   deploy-to-vm:
