@@ -50,6 +50,9 @@ jobs:
           echo "Installing Docker (if not installed)"
           ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "curl -fsSL https://get.docker.com | sh"
 
+          echo "Log in to Docker Hub"
+          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}"
+
           echo "Pulling Docker image"
           ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "docker pull boldr/memebot:latest"
 
