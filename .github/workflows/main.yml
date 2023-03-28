@@ -45,10 +45,10 @@ jobs:
           ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "curl -fsSL https://get.docker.com | sh"
 
           echo "Pulling Docker image"
-          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "docker pull ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_USERNAME }}/memebot"
+          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "docker pull boldr/memebot:latest"
 
           echo "Stopping existing container (if any)"
           ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "docker stop memebot || true && docker rm memebot || true"
 
           echo "Starting new container"
-          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "docker run --name memebot --restart always -d -e db_password=${{ secrets.DB_PASSWORD }} -e db_user_name=${{ secrets.DB_USER_NAME }} -e bot_token=${{ secrets.BOT_TOKEN }} -e db_host=${{ secrets.DB_HOST }} ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_USERNAME }}/memebot"
+          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "docker run --name memebot --restart always -d -e db_password=${{ secrets.DB_PASSWORD }} -e db_user_name=${{ secrets.DB_USER_NAME }} -e bot_token=${{ secrets.BOT_TOKEN }} -e db_host=${{ secrets.DB_HOST }} boldr/memebot:latest"
