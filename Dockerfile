@@ -7,6 +7,9 @@ WORKDIR /app
 # Copy the compiled JAR file into the container
 COPY target/memebot-0.0.1-SNAPSHOT.jar /app/your-app.jar
 
+# Copy the CA certificate into the container
+COPY src/main/resources/CA.pem /root/.postgresql/root.crt
+
 # Expose the application port (replace 8080 with your actual application port)
 EXPOSE 8080
 
