@@ -63,4 +63,4 @@ jobs:
           ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "docker rm memebot || true"
 
           echo "Starting new container"
-          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "docker run --name memebot --restart always -d -e db_password=${{ secrets.DB_PASSWORD }} -e db_user_name=${{ secrets.DB_USER_NAME }} -e bot_token=${{ secrets.BOT_TOKEN }} -e db_host=${{ secrets.DB_HOST }} boldr/memebot:latest"
+          ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${secrets.VM_USER}@${secrets.VM_HOST} 'docker run --name memebot --restart always -d -e db_password='${secrets.DB_PASSWORD}' -e db_user_name='${secrets.DB_USER_NAME}' -e bot_token='${secrets.BOT_TOKEN}' -e db_host='${secrets.DB_HOST}' boldr/memebot:latest'
