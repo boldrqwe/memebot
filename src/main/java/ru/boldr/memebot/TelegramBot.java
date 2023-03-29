@@ -97,15 +97,19 @@ public class TelegramBot extends TelegramLongPollingBot {
 
             String data = update.getCallbackQuery().getData();
             var chatId = update.getCallbackQuery().getMessage().getChatId().toString();
+            File file = new File("files/webmfiles/");
+            File[] listFiles = file.listFiles();
             if (data.toLowerCase().contains("callback")) {
-                File file = new File("files/webmfiles/");
 
-                StreamEx.of(Objects.requireNonNull(file.listFiles())).forEach(File::delete);
+                if (listFiles != null) {
+                    StreamEx.of(listFiles).forEach(File::delete);
+                }
+
                 sendAllMedia(data, chatId);
             }
-            File file = new File("files/webmfiles/");
-
-            StreamEx.of(Objects.requireNonNull(file.listFiles())).forEach(File::delete);
+            if (listFiles != null) {
+                StreamEx.of(listFiles).forEach(File::delete);
+            }
         }
 
         if (update.hasMessage() && Objects.nonNull(update.getMessage().getText())) {
