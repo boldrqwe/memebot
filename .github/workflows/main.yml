@@ -46,6 +46,13 @@ jobs:
       - name: Add runner user to docker group
         run: sudo usermod -aG docker runner && newgrp docker
       - name: Deploy to Yandex.Cloud VM
+        env:
+          VM_USER: ${{ secrets.VM_USER }}
+          VM_HOST: ${{ secrets.VM_HOST }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_USER_NAME: ${{ secrets.DB_USER_NAME }}
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          DB_HOST: ${{ secrets.DB_HOST }}
         run: |
           echo "Installing Docker (if not installed)"
           ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "curl -fsSL https://get.docker.com | sh"
