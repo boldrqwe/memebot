@@ -28,22 +28,27 @@ public class CoolFile {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long id;
+    private Long id;
 
     @Column(name = "file_name")
-    String fileName;
+    private String fileName;
 
     @Column(length = 10000, name = "message")
-    String message;
+    private String message;
 
     @Column
-    String threadUrl;
+    private String threadUrl;
+
+    public CoolFile(String fileName, String message) {
+        this.fileName = fileName;
+        this.message = message;
+    }
 
     @Column(name = "create_time")
     @CreationTimestamp
-    LocalDateTime createTime;
+    private LocalDateTime createTime;
 
     @Column(name = "update_time")
     @UpdateTimestamp
-    LocalDateTime updateTime;
+    private LocalDateTime updateTime;
 }

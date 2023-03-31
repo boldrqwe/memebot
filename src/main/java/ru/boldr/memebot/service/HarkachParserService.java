@@ -21,6 +21,7 @@ import javax.annotation.Nullable;
 import javax.transaction.Transactional;
 
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import net.bramp.ffmpeg.FFmpeg;
@@ -30,6 +31,7 @@ import net.bramp.ffmpeg.builder.FFmpegBuilder;
 import one.util.streamex.StreamEx;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.telegram.telegrambots.meta.api.methods.ParseMode;
 import org.telegram.telegrambots.meta.api.objects.media.InputMedia;
@@ -47,9 +49,9 @@ import ru.boldr.memebot.model.entity.HarKachFileHistory;
 import ru.boldr.memebot.repository.CoolFileRepo;
 import ru.boldr.memebot.repository.HarkachFileHistoryRepo;
 
-@Component
+@Service
 @Slf4j
-@AllArgsConstructor
+@RequiredArgsConstructor
 @Transactional
 public class HarkachParserService {
 
