@@ -16,7 +16,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 import javax.transaction.Transactional;
@@ -77,47 +76,10 @@ public class HarkachParserService {
         List<CoolFile> coolFiles1 = StreamEx.of(coolFiles).filter(cf -> !history.contains(cf.getFileName())).toList();
         Optional<CoolFile> first = coolFiles1.stream().findFirst();
 
-        String fileName;
-        String comment;
-        if (first.isPresent()) {
-            fileName = DVACH + first.get().getFileName();
-
-            harkachFileHistoryRepo.save(
-                    HarKachFileHistory.builder()
-                            .chatId(chatId)
-                            .fileName(first.get().getFileName())
-                            .build()
-            );
-            comment = first.get().getMessage();
-            return new ThreadComment(fileName, comment);
-        }
-        return new ThreadComment("шутки кончились ):", "");
-    }
-
-    public Map<String, List<InputMedia>> getContentMap(String chatId) {
-
-        List<CoolFile> coolFiles = coolFileRepo.findAll();
-
-        List<String> history = harkachFileHistoryRepo.findAllByChatId(chatId)
-                .stream().map(HarKachFileHistory::getFileName).collect(Collectors.toList());
-
-        List<CoolFile> coolFiles1 = StreamEx.of(coolFiles).filter(cf -> !history.contains(cf.getFileName())).toList();
-        Map<String, List<CoolFile>> groupedFiles = StreamEx.of(coolFiles1).groupingBy(CoolFile::getMessage);
-
-        List<InputMedia> inputMedias = new ArrayList<>();
-
-        Optional<Map<String, List<CoolFile>>> first = StreamEx.of(groupedFiles).findFirst();
-        if (first.isPresent()) {
-            Map<String, List<CoolFile>> files = first.get();
-
-            files.forEach((message, fileList) -> {
-                inputMedias.addAll(StreamEx.of(fileList).map(this::toInputMedia).collect(Collectors.toList()));
-                saveHarkachHistory(chatId, fileList);
-            });
-
-        }
-        String comment = first.get().keySet().stream().findFirst().orElse("");
-        return Map.of(comment, inputMedias);
+        return first.map(file -> {
+            harkachFileHistoryRepo.save(toHarKachFileHistory(file, chatId));
+            return new ThreadComment(DVACH + file.getFileName(), file.getMessage());
+        }).orElse(new ThreadComment("шутки кончились ):", ""));
     }
 
     private void saveHarkachHistory(String chatId, List<CoolFile> fileList) {
@@ -300,7 +262,7 @@ public class HarkachParserService {
         filteredFiles.forEach(file -> {
             if (isAvailableToDownloadFile(file) > 0) {
                 switch (getExtension(file.getFileName())) {
-                    case "jpg", "png", "mp4" -> inputMedia.add(createInputMedia(file));
+                    case "jpg", "png", "mp4", "webp" -> inputMedia.add(createInputMedia(file));
                     case "webm" -> webmPaths.add(file.getFileName());
                 }
             }
