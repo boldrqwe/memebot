@@ -31,6 +31,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -75,6 +76,10 @@ public class TelegramBot extends TelegramLongPollingBot {
     private final SpeakService speakService;
     private final HatGameService hatGameService;
     private final TelegramSemaphore telegramSemaphore;
+    public static final String MAN_FILE_NAME = "files/man.mp4";
+    public static final String REVERSE_MAN_FILE_NAME = "files/man_reverse.mp4";
+    public static final String REAL_MAN_FILE_NAME = "static/real_man.mp4";
+    public static final String ROMPOMPOM_FILE_NAME = "static/rompompom.mp4";
 
     @Override
     public String getBotUsername() {
@@ -113,6 +118,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
 
         if (update.hasMessage() && Objects.nonNull(update.getMessage().getText())) {
+            logger.info("new update: {}", jsonHelper.lineToMap(update));
 
             var message = update.getMessage();
             var chatId = message.getChatId().toString();
@@ -121,22 +127,6 @@ public class TelegramBot extends TelegramLongPollingBot {
             if (text.toLowerCase().contains("бот скажи")) {
                 SendMessage sendMessage = speakService.makeMessage(text, update);
                 execute(sendMessage);
-            }
-
-            if (text.equalsIgnoreCase("/шляпа")) {
-                hatGameService.process(update);
-            }
-
-            logger.info("new update: {}", jsonHelper.lineToMap(update));
-            if (!update.hasMessage() || message.getText() == null) {
-                logger.warn("massage is empty");
-                return;
-            }
-
-            if (text.toLowerCase(Locale.ROOT).equals(Command.HELP.getCommand())) {
-
-                execute(new SendMessage(chatId, Command.getCommands()));
-
             }
 
             if (!updateHandler.checkWriteMessagePermission(message)) {
@@ -153,12 +143,55 @@ public class TelegramBot extends TelegramLongPollingBot {
                 return;
             }
 
-            execute(
-                    update,
-                    chatId,
-                    text.toLowerCase(Locale.ROOT)
-            );
+            if (text.toLowerCase(Locale.ROOT).contains(Command.MAN.getCommand())) {
+                manReaction(update, chatId);
+            }
+
+            chooseAndExecuteCommand(chatId, update, text);
         }
+    }
+
+    private void manReaction(Update update, String chatId) {
+        sendAnimation(new SendAnimation(chatId, new InputFile(new File(MAN_FILE_NAME))));
+        messageHistoryService.save(BotMessageHistory.builder()
+                .chatId(chatId)
+                .messageId(update.getMessage().getMessageId())
+                .build());
+    }
+
+    private void chooseAndExecuteCommand(String chatId, Update update, String text) throws TelegramApiException, IOException {
+        Command command = Command.checkThisSheet(text.toLowerCase());
+        switch (command) {
+            case HAT -> hatGameService.process(update);
+            case HELP -> execute(new SendMessage(chatId, Command.getCommands()));
+            case MAN-> manReaction(update, chatId);
+            case REAL_MAN -> sendAnimation(chatId, REAL_MAN_FILE_NAME);
+            case ROMPOMPOM -> sendAnimation(chatId, ROMPOMPOM_FILE_NAME);
+            case MAN_REVERSE -> sendAnimation(new SendAnimation(chatId, new InputFile(new File(REVERSE_MAN_FILE_NAME))));
+            case KAKASHKULES -> sendMessage(new SendMessage(chatId, "http://51.250.107.78:8082/"));
+            case BURGERTRACH -> sendMessage(new SendMessage(chatId, "http://51.250.107.78:8082/"));
+            case HARKACH -> {
+                ThreadComment threadComment = harkachParserService.getContent(chatId);
+                sendMessage(new SendMessage(chatId, threadComment.picture()));
+                if (threadComment.comment() != null && !threadComment.comment().isEmpty()) {
+                    sendMessage(new SendMessage(chatId, threadComment.comment()));
+                }
+            }
+            case HARKACHBASE_UPDATE -> harkachParserService.loadContent();
+            case HARKACHMOD_ON -> harkachModHistoryRepo.save(
+                    HarkachModHistory.builder()
+                            .chatId(update.getMessage().getChatId().toString())
+                            .build()
+            );
+            case HARKACHMOD_OFF -> transactionTemplate.executeWithoutResult(status ->
+                    harkachModHistoryRepo.deleteByChatId(update.getMessage().getChatId().toString()));
+            case HUITA -> sendMessage(new SendMessage(chatId, "Не пиши хуйню, додик!"));
+        }
+    }
+
+    private void sendAnimation(String chatId, String fileName) throws IOException {
+        InputStream inputStream = new ClassPathResource(fileName).getInputStream();
+        sendAnimation(new SendAnimation(chatId, new InputFile(inputStream, fileName)));
     }
 
     public void sendAllMedia(String data, String chatId) {
@@ -376,6 +409,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         }, 1L);
     }
 
+    @Deprecated
     private void execute(Update update, String chatId, String command) throws TelegramApiException {
         if (command.toLowerCase(Locale.ROOT).contains(Command.MAN.getCommand())) {
             sendAnimation(new SendAnimation(chatId, new InputFile(new File("files/man.mp4"))));
@@ -386,7 +420,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
 
         if (Command.MAN_REVERSE.getCommand().equals(command)) {
-            sendAnimation(new SendAnimation(chatId, new InputFile(new File("files/man_reverse.mp4"))));
+            sendAnimation(new SendAnimation(chatId, new InputFile(new File(REVERSE_MAN_FILE_NAME))));
         }
 
         if (Command.KAKASHKULES.getCommand().equals(command)) {
