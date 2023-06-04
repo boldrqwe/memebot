@@ -33,7 +33,7 @@ public class CoolFile {
     @Column(name = "file_name")
     String fileName;
 
-    @Column(length = 10000, name = "message")
+    @Column(name = "message")
     String message;
 
     @Column

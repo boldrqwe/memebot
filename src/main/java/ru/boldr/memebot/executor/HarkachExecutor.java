@@ -88,34 +88,41 @@ public class HarkachExecutor {
 
             String comment = harkachMarkupConverter.convertToTgHtml(threadComment.comment());
 
-            log.info("send " + picture);
-
             switch (extension) {
-                case ("jpg"), ("png") -> telegramSemaphore
-                        .executeInLock(() -> telegramBot.executeAsync(SendPhoto.builder()
-                                .chatId(chatId)
-                                .photo(inputFile)
-                                .caption(comment)
-                                .parseMode(ParseMode.HTML)
-                                .replyMarkup(inlineKeyboard)
-                                .build()), 1L);
+                case ("jpg"), ("png"), ("webp") -> telegramSemaphore
+                        .executeInLock(() -> {
+                            telegramBot.executeAsync(SendPhoto.builder()
+                                    .chatId(chatId)
+                                    .photo(inputFile)
+                                    .caption(comment)
+                                    .parseMode(ParseMode.HTML)
+                                    .replyMarkup(inlineKeyboard)
+                                    .build());
+                            log.info("send " + picture);
+                        }, 1L);
 
                 case ("mp4"), ("gif") -> telegramSemaphore
-                        .executeInLock(() -> telegramBot.executeAsync(SendVideo.builder()
-                                .chatId(chatId)
-                                .caption(comment)
-                                .video(inputFile)
-                                .parseMode(ParseMode.HTML)
-                                .replyMarkup(inlineKeyboard)
-                                .build()), 1L);
+                        .executeInLock(() -> {
+                            telegramBot.executeAsync(SendVideo.builder()
+                                    .chatId(chatId)
+                                    .caption(comment)
+                                    .video(inputFile)
+                                    .parseMode(ParseMode.HTML)
+                                    .replyMarkup(inlineKeyboard)
+                                    .build());
+                            log.info("send " + picture);
+                        }, 1L);
                 case ("webm") -> telegramSemaphore
-                        .executeInLock(() -> telegramBot.executeAsync(SendVideo.builder()
-                                .chatId(chatId)
-                                .caption(comment)
-                                .video(new InputFile(new File(harkachParserService.convertWebmToMp4(url))))
-                                .parseMode(ParseMode.HTML)
-                                .replyMarkup(inlineKeyboard)
-                                .build()), 1L);
+                        .executeInLock(() -> {
+                            telegramBot.executeAsync(SendVideo.builder()
+                                    .chatId(chatId)
+                                    .caption(comment)
+                                    .video(new InputFile(new File(harkachParserService.convertWebmToMp4(url))))
+                                    .parseMode(ParseMode.HTML)
+                                    .replyMarkup(inlineKeyboard)
+                                    .build());
+                            log.info("send " + picture);
+                        }, 1L);
 
                 default -> throw new IllegalStateException("Unexpected value: " + extension);
             }
