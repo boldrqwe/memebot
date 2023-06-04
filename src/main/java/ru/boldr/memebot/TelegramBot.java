@@ -263,7 +263,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private void partitionAndSend(String chatId, List<InputMedia> medias) {
         var extensionToInputMedia =
-                StreamEx.of(medias).groupingBy(m -> Files.getFileExtension(m.getMedia()));
+                StreamEx.of(medias).nonNull().groupingBy(m -> Files.getFileExtension(m.getMedia()));
 
         extensionToInputMedia.keySet().forEach(key -> {
             var inputMedias = extensionToInputMedia.get(key);
