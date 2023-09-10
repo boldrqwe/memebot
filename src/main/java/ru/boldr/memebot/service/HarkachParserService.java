@@ -9,6 +9,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -145,20 +146,31 @@ public class HarkachParserService {
 
         Map<Long, Post> numToPost = StreamEx.of(posts).toMap(Post::num, Function.identity());
 
-        List<PostContent> postContents = new ArrayList<>();
-        for (Post post : posts) {
-            if (post.parent() == null) {
-                continue;
-            }
+        List<PostContent> postContents = StreamEx.of(posts)
+                .parallel()
+                .filter(post -> post.parent() != null)
+                .map(post -> {
+                    for (String cool : coolSet) {
+                        if (post.comment().toLowerCase(Locale.ROOT).contains(cool)) {
+                            return getFunnyFiles(numToPost, post);
+                        }
+                    }
+                    return new ArrayList<PostContent>();
+                }).flatMap(Collection::stream).toList();
 
-            for (String cool : coolSet) {
-                if (post.comment().toLowerCase(Locale.ROOT).contains(cool)) {
-                    List<PostContent> funnyFiles = getFunnyFiles(numToPost, post);
-
-                    postContents.addAll(funnyFiles);
-                }
-            }
-        }
+//        for (Post post : posts) {
+//            if (post.parent() == null) {
+//                continue;
+//            }
+//
+//            for (String cool : coolSet) {
+//                if (post.comment().toLowerCase(Locale.ROOT).contains(cool)) {
+//                    List<PostContent> funnyFiles = getFunnyFiles(numToPost, post);
+//
+//                    postContents.addAll(funnyFiles);
+//                }
+//            }
+//        }
 
         Set<PostContent> postContentSet = StreamEx.of(postContents).toSet();
 
