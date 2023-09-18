@@ -36,7 +36,6 @@ public class HarkachExecutor {
     private final HarkachMarkupConverter harkachMarkupConverter;
     private final TelegramSemaphore telegramSemaphore;
 
-    //* * * ? * * *
     @SneakyThrows
     @Scheduled(cron = "0/15 * * ? * *")
     void sendPictures() {
