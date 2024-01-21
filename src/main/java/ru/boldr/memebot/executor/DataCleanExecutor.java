@@ -4,12 +4,13 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 
-import javax.transaction.Transactional;
+
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.boldr.memebot.repository.BotMassageHistoryRepo;
 import ru.boldr.memebot.repository.CoolFileRepo;
 import ru.boldr.memebot.repository.HarkachFileHistoryRepo;
@@ -24,7 +25,7 @@ public class DataCleanExecutor {
     private final HarkachFileHistoryRepo harkachFileHistoryRepo;
 
     @Scheduled(cron = "0 0 0 ? * 4/1")
-    @Transactional
+   @Transactional
     void cleanData() {
 
         botMassageHistoryRepo.deleteAll();

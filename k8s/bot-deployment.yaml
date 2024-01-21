@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: telegram-bot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: telegram-bot
+  template:
+    metadata:
+      labels:
+        app: telegram-bot
+    spec:
+      initContainers:
+        - name: wait-for-db
+          image: busybox
+          command: [ 'sh', '-c', 'until nc -z postgres 5432; do echo waiting for db; sleep 2; done;' ]
+      containers:
+        - name: telegram-bot
+          image: your-telegram-bot  # Укажите имя вашего локального образа
+          imagePullPolicy: Never     # Это указывает Kubernetes не пытаться скачивать образ из репозитория
+          ports:
+            - containerPort: 8080
