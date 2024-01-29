@@ -1,0 +1,39 @@
+# values.yaml для настройки Kafka
+
+## Глобальные настройки Kafka
+global:
+  storageClass: "standard"  # Используйте storageClass, доступный в вашем кластере Kubernetes
+
+## Настройки Kafka брокера
+replicaCount: 3  # Количество реплик Kafka брокера
+
+## Настройки для доступа к Kafka извне кластера Kubernetes
+service:
+  type: ClusterIP  # Тип сервиса (NodePort, LoadBalancer, ClusterIP)
+  port: 9092  # Порт, на котором будет доступен Kafka
+
+## Настройки управления ресурсами
+resources:
+  limits:
+    cpu: "500m"  # Лимит CPU
+    memory: "2Gi"  # Лимит памяти
+  requests:
+    cpu: "250m"  # Запрос CPU
+    memory: "1Gi"  # Запрос памяти
+
+## Настройки хранения
+persistence:
+  enabled: true  # Включение постоянного хранения данных
+  size: "10Gi"  # Размер хранилища
+
+## Пользовательские настройки Kafka
+configurationOverrides:
+  "auto.create.topics.enable": "true"  # Автоматическое создание топиков
+  "delete.topic.enable": "true"  # Разрешить удаление топиков
+
+## Настройки Zookeeper (необходимо для Kafka)
+zookeeper:
+  replicaCount: 3  # Количество реплик Zookeeper
+  persistence:
+    enabled: true  # Включение постоянного хранения данных для Zookeeper
+    size: "5Gi"  # Размер хранилища для Zookeeper

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Thread View</title>
+    <!-- Стили и другие ресурсы -->
+</head>
+<body>
+<h1>Thread View</h1>
+<div>
+    <h2>Parent Media</h2>
+    <!-- Отображение информации о родительском медиафайле -->
+</div>
+<div>
+    <h2>Child Media Files</h2>
+    <div th:each="file : ${childFiles}">
+        <!-- Отображение информации о каждом дочернем медиафайле -->
+    </div>
+</div>
+</body>
+</html>

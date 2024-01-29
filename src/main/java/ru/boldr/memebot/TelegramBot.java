@@ -1,18 +1,5 @@
 package ru.boldr.memebot;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 import lombok.NonNull;
@@ -36,11 +23,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.ParseMode;
-import org.telegram.telegrambots.meta.api.methods.send.SendAnimation;
-import org.telegram.telegrambots.meta.api.methods.send.SendMediaGroup;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
-import org.telegram.telegrambots.meta.api.methods.send.SendVideo;
+import org.telegram.telegrambots.meta.api.methods.send.*;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.media.InputMedia;
@@ -49,15 +32,20 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import ru.boldr.memebot.handlers.UpdateHandler;
 import ru.boldr.memebot.helpers.JsonHelper;
 import ru.boldr.memebot.model.Command;
-import ru.boldr.memebot.model.entity.BotMessageHistory;
 import ru.boldr.memebot.model.entity.HarkachModHistory;
 import ru.boldr.memebot.repository.HarkachModHistoryRepo;
-import ru.boldr.memebot.service.HarkachParserService;
-import ru.boldr.memebot.service.HatGameService;
-import ru.boldr.memebot.service.MessageHistoryService;
-import ru.boldr.memebot.service.SpeakService;
-import ru.boldr.memebot.service.TelegramSemaphore;
-import ru.boldr.memebot.service.ThreadComment;
+import ru.boldr.memebot.service.*;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 @Component
@@ -70,11 +58,9 @@ public class TelegramBot extends TelegramLongPollingBot {
     private final JsonHelper jsonHelper;
     private final UpdateHandler updateHandler;
     private final HarkachParserService harkachParserService;
-    private final MessageHistoryService messageHistoryService;
     private final HarkachModHistoryRepo harkachModHistoryRepo;
     private final TransactionTemplate transactionTemplate;
     private final SpeakService speakService;
-    private final HatGameService hatGameService;
     private final TelegramSemaphore telegramSemaphore;
     public static final String MAN_FILE_NAME = "files/man.mp4";
     public static final String REVERSE_MAN_FILE_NAME = "files/man_reverse.mp4";
@@ -133,10 +119,6 @@ public class TelegramBot extends TelegramLongPollingBot {
                 return;
             }
 
-            String answer = updateHandler.saveFunnyJoke(update);
-            if (answer != null) {
-                execute(new SendMessage(chatId, answer));
-            }
 
             if (update.getMessage().getText() == null) {
                 logger.warn("massage is null");
@@ -153,21 +135,18 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private void manReaction(Update update, String chatId) {
         sendAnimation(new SendAnimation(chatId, new InputFile(new File(MAN_FILE_NAME))));
-        messageHistoryService.save(BotMessageHistory.builder()
-                .chatId(chatId)
-                .messageId(update.getMessage().getMessageId())
-                .build());
+
     }
 
     private void chooseAndExecuteCommand(String chatId, Update update, String text) throws TelegramApiException, IOException {
         Command command = Command.checkThisSheet(text.toLowerCase());
         switch (command) {
-            case HAT -> hatGameService.process(update);
             case HELP -> execute(new SendMessage(chatId, Command.getCommands()));
-            case MAN-> manReaction(update, chatId);
+            case MAN -> manReaction(update, chatId);
             case REAL_MAN -> sendAnimation(chatId, REAL_MAN_FILE_NAME);
             case ROMPOMPOM -> sendAnimation(chatId, ROMPOMPOM_FILE_NAME);
-            case MAN_REVERSE -> sendAnimation(new SendAnimation(chatId, new InputFile(new File(REVERSE_MAN_FILE_NAME))));
+            case MAN_REVERSE ->
+                    sendAnimation(new SendAnimation(chatId, new InputFile(new File(REVERSE_MAN_FILE_NAME))));
             case KAKASHKULES -> sendMessage(new SendMessage(chatId, "http://51.250.107.78:8082/"));
             case BURGERTRACH -> sendMessage(new SendMessage(chatId, "http://51.250.107.78:8082/"));
             case HARKACH -> {
@@ -413,10 +392,6 @@ public class TelegramBot extends TelegramLongPollingBot {
     private void execute(Update update, String chatId, String command) throws TelegramApiException {
         if (command.toLowerCase(Locale.ROOT).contains(Command.MAN.getCommand())) {
             sendAnimation(new SendAnimation(chatId, new InputFile(new File("files/man.mp4"))));
-            messageHistoryService.save(BotMessageHistory.builder()
-                    .chatId(chatId)
-                    .messageId(update.getMessage().getMessageId())
-                    .build());
         }
 
         if (Command.MAN_REVERSE.getCommand().equals(command)) {

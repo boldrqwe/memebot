@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Picture Gallery</title>
+    <link th:href="@{/style.css}" rel="stylesheet"/>
+</head>
+<body>
+<h1>Picture Gallery</h1>
+<select id="itemCount" onchange="updateItemCount()">
+    <option value="10" th:selected="${selectedSize == 10}">10</option>
+    <option value="20" th:selected="${selectedSize == 20}">20</option>
+    <option value="30" th:selected="${selectedSize == 30}">30</option>
+    <option value="40" th:selected="${selectedSize == 40}">40</option>
+    <option value="50" th:selected="${selectedSize == 50}">50</option>
+</select>
+<div class="pagination-wrapper">
+    <a th:href="@{/pictures(page=${mediaFilesPage.number - 1}, size=${selectedSize})}"
+       th:unless="${mediaFilesPage.first}" class="navigation-link">Previous</a>
+    <th:block th:with="startPage=${T(java.lang.Math).max(0, mediaFilesPage.number - mediaFilesPage.number % 10)},
+                      endPage=${T(java.lang.Math).min(mediaFilesPage.totalPages - 1, startPage + 9)}">
+        <th:block th:each="pageNum : ${#numbers.sequence(startPage, endPage)}">
+            <a th:href="@{/pictures(page=${pageNum}, size=${selectedSize})}" th:text="${pageNum + 1}"
+               class="page-link"></a>
+        </th:block>
+    </th:block>
+    <a th:href="@{/pictures(page=${mediaFilesPage.number + 1}, size=${selectedSize})}"
+       th:unless="${mediaFilesPage.last}" class="navigation-link">Next</a>
+</div>
+
+<div class="media-table">
+    <div th:each="mediaFile : ${mediaFilesPage.content}" class="media-comment-container">
+        <div th:switch="${pictureService.getMediaType(mediaFile.fileType)} ">
+            <img th:case="'image'" class="media"
+                 th:src="@{'data:image/png;base64,' + ${pictureService.encodeBase64(mediaFile.fileData)}}"
+                 onclick="toggleSize(this)"/>
+            <video th:case="'video'" class="media" controls onclick="toggleSize(this)">
+                <source th:src="@{'data:video/mp4;base64,' + ${pictureService.encodeBase64(mediaFile.fileData)}}"/>
+            </video>
+        </div>
+        <div>
+            <div class="comment" onclick="toggleComment(this)">
+                <div class="comment-content hidden" th:utext="${pictureService.formatComment(mediaFile.comment)}"></div>
+            </div>
+            <button th:if="${!mediaFile.isThreadDownloaded}" th:data-fileurl="${mediaFile.fileUrl}"
+                    class="form-thread-btn button-spacing">Сформировать тред
+            </button>
+            <button th:if="${mediaFile.isThreadDownloaded}" th:href="@{'/pictures/thread/' + ${mediaFile.fileUrl}}"
+                    class="enter-thread-btn button-spacing">Зайти в тред
+            </button>
+        </div>
+    </div>
+</div>
+<div class="pagination-wrapper">
+    <a th:href="@{/pictures(page=${mediaFilesPage.number - 1}, size=${selectedSize})}"
+       th:unless="${mediaFilesPage.first}" class="navigation-link">Previous</a>
+    <th:block th:with="startPage=${T(java.lang.Math).max(0, mediaFilesPage.number - mediaFilesPage.number % 10)},
+                      endPage=${T(java.lang.Math).min(mediaFilesPage.totalPages - 1, startPage + 9)}">
+        <th:block th:each="pageNum : ${#numbers.sequence(startPage, endPage)}">
+            <a th:href="@{/pictures(page=${pageNum}, size=${selectedSize})}" th:text="${pageNum + 1}"
+               class="page-link"></a>
+        </th:block>
+    </th:block>
+    <a th:href="@{/pictures(page=${mediaFilesPage.number + 1}, size=${selectedSize})}"
+       th:unless="${mediaFilesPage.last}" class="navigation-link">Next</a>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/stomp-websocket/lib/stomp.min.js"></script>
+<script type="text/javascript" th:src="@{/script.js}"></script>
+</body>
+</html>
+

@@ -1,0 +1,131 @@
+body {
+    background-color: rgba(56, 48, 46, 0.96); /* Серый фон, как в чате GPT */
+}
+
+/* Стили для медиа (изображений и видео) */
+.media {
+    width: 200px;
+    height: 200px;
+    object-fit: cover;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-radius: 10px; /* Закругленные углы для медиа */
+    margin-right: 15px; /* Отступ справа от медиа */
+}
+
+/* Стили для увеличенного медиа */
+.media.enlarged {
+    width: auto;
+    height: auto;
+    max-width: 90%; /* Максимальная ширина */
+    max-height: 90vh; /* Максимальная высота */
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+}
+
+/* Стили для таблицы */
+.media-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.media-table th, .media-table td {
+    border: 1px solid #3a3333;
+    padding: 8px;
+    text-align: left;
+}
+
+.media-table th {
+    background-color: #3a1e1e;
+}
+
+.media-row:hover {
+    background-color: #383535;
+}
+
+/* Стили для комментариев */
+.comment {
+    flex-grow: 1; /* Комментарий занимает оставшееся пространство */
+    background-color: #3d3d3f;
+    padding: 5px;
+    border-radius: 10px;
+}
+
+.media-comment-container {
+    display: flex; /* Использование Flexbox для расположения элементов в ряд */
+    align-items: center; /* Выравнивание по центру */
+    padding: 10px;
+    border-radius: 15px; /* Закругленные углы */
+    background-color: rgba(100, 65, 65, 0.24); /* Белый фон для контейнера */
+    margin-bottom: 10px; /* Отступ между контейнерами */
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Тень для контейнера */
+}
+
+.comment-content {
+    font-size: 1.3rem;
+    overflow: hidden;
+    color: #cccccc;
+    max-height: 5em; /* Ограничение высоты для нерасширенного текста */
+}
+
+.comment-content.expanded {
+    max-height: none; /* Убираем ограничение высоты при расширении */
+}
+
+.toggle-comment {
+    display: none; /* Скрыть кнопку по умолчанию */
+    cursor: pointer;
+    background-color: #007bff;
+    color: #8f7b7b;
+    border: none;
+    padding: 5px 10px;
+    margin-top: 5px;
+    border-radius: 5px;
+}
+
+.toggle-comment:hover {
+    background-color: #0056b3;
+}
+
+/* Адаптивные медиа-запросы */
+@media (max-width: 600px) {
+    .media, .media.enlarged {
+        width: 100%; /* На маленьких экранах занимает весь доступный ширф */
+        height: auto;
+    }
+}
+
+.navigation-link {
+    color: white; /* Установка белого цвета текста */
+    /* Другие стили для оформления (например, фон, отступы и т.д.) */
+}
+
+.pagination-wrapper {
+    text-align: center; /* Центрирование содержимого */
+    margin: 20px 0; /* Отступы сверху и снизу для разделения */
+}
+
+/* Стили для ссылок пагинации */
+.page-link {
+    color: white; /* Белый цвет текста ссылок */
+    margin: 0 5px; /* Отступы между ссылками */
+    /* Дополнительные стили для оформления ссылок, если нужно */
+}
+
+.spoiler {
+    background-color: grey; /* Серый фон */
+    color: grey; /* Серый цвет текста */
+    cursor: pointer;
+    transition: color 0.3s; /* Плавный переход цвета текста */
+}
+
+.spoiler:hover {
+    color: black; /* Цвет текста при наведении */
+}
+
+.button-spacing {
+    margin-top: 2%; /* добавляем отступ сверху для каждой кнопки */
+}
