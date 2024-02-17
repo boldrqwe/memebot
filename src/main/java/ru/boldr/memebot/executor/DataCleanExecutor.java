@@ -19,6 +19,9 @@ import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 @Slf4j
 @Service
@@ -38,7 +41,7 @@ public class DataCleanExecutor {
         harkachFileHistoryRepo.deleteAllByCreateTimeBefore(LocalDateTime.now().minus(7L, ChronoUnit.DAYS));
     }
 
-    @Scheduled(cron = "0 * * ? * *")
+    @Scheduled(cron = "0 0/7 * ? * *")
     @Transactional
     void checkAvailable() {
         log.info("startCheckAvailable");
@@ -60,7 +63,11 @@ public class DataCleanExecutor {
         mediaFileService.deleteMediaFile(mediaFiles);
         mediaFileService.deleteMediaFile(byParentIdIn);
         fileReadWriteService.deleteFiles(mediaFiles);
+        ReentrantLock reentrantLock = new ReentrantLock();
+        reentrantLock.getHoldCount();
 
+        ReentrantReadWriteLock reentrantReadWriteLock = new ReentrantReadWriteLock();
+        Semaphore semaphore = new Semaphore(3);
         log.info("delete %d files".formatted(coolFiles.size()));
     }
 }

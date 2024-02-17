@@ -22,7 +22,7 @@ public class FileReadTask implements Runnable {
         try (var out = new FileInputStream(mediaFile.getFilePath())) {
             byte[] bytes = out.readAllBytes();
             concurrentLinkedQueue.add(new MediaFileDto(bytes, mediaFile.getFileType(),
-                    mediaFile.getComment(), mediaFile.getFileUrl(), mediaFile.getIsTreadDownloaded()));
+                    mediaFile.getComment(), mediaFile.getFileUrl().replaceAll("/","-"), mediaFile.getIsTreadDownloaded()));
         } catch (IOException e) {
             errorOccurred.set(true); // Установка флага в случае ошибки
             throw new RuntimeException("ошибка чтения");

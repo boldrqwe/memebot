@@ -9,15 +9,14 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import ru.boldr.memebot.model.ThreadMediaFileDto;
 import ru.boldr.memebot.model.entity.MediaFile;
 import ru.boldr.memebot.service.MediaFileDto;
 import ru.boldr.memebot.service.MediaFileService;
 import ru.boldr.memebot.service.PictureService;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Controller
@@ -44,7 +43,7 @@ public class PictureController {
     @PostMapping("/start-thread-processing")
     public ResponseEntity<?> startThreadProcessing(@RequestBody Map<String, String> payload) {
         System.out.println("бонговик");
-        String fileUrl = payload.get("fileUrl");
+        String fileUrl = payload.get("fileUrl").replaceAll("-", "/");
         List<MediaFile> fileUrl1 = mediaFileService.findByFileUrl(fileUrl);
         if (fileUrl1.isEmpty()) {
             log.info("не найден фал при формированиии");
@@ -66,18 +65,18 @@ public class PictureController {
         log.info("бонгарняк");
 
         // Найти родительский MediaFile по fileUrl
-        List<MediaFile> optionalMediaFile = mediaFileService.findByFileUrl(fileUrl);
+        List<MediaFile> optionalMediaFile = mediaFileService.findByFileUrl(fileUrl.replaceAll("-", "/"));
         if (optionalMediaFile.isEmpty()) {
             throw new RuntimeException("file not fount");
         }
-        MediaFile parentMediaFile = optionalMediaFile.get(0);
+        List<Long> ids = optionalMediaFile.stream().map(MediaFile::getId).toList();
         // Получить список дочерних медиафайлов
-        List<ThreadMediaFileDto> childFiles = parentMediaFile.getChildFiles().stream()
-                .map(file -> new ThreadMediaFileDto(file.getId(), file.getFileType(), file.getFileUrl()))
-                .collect(Collectors.toList());
+        Collection<MediaFileDto> childFiles = mediaFileService.findMediaDtoByParentIdIn(ids);
+
 
         model.addAttribute("childFiles", childFiles);
-        model.addAttribute("parentFile", parentMediaFile);
+        model.addAttribute("parentFile", optionalMediaFile.get(0));
+        model.addAttribute("pictureService", pictureService);
 
         return "threadView"; // Имя шаблона Thymeleaf для страницы треда
     }

@@ -111,13 +111,12 @@ public class FileReadWriteService {
     }
 
 
-    public int deleteFiles(Collection<MediaFile> mediaFiles) {
+    public void deleteFiles(Collection<MediaFile> mediaFiles) {
         readWriteLock.writeLock().lock(); // Блокировка для записи
         try {
             for (MediaFile file : mediaFiles) {
                 delete(file);
             }
-            return mediaFiles.size();
         } finally {
             readWriteLock.writeLock().unlock(); // Разблокировка
         }

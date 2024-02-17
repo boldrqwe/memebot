@@ -1,20 +1,46 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.w3.org/1999/xhtml">
 <head>
     <title>Thread View</title>
-    <!-- Стили и другие ресурсы -->
+    <link th:href="@{/style.css}" rel="stylesheet"/>
 </head>
 <body>
 <h1>Thread View</h1>
+
 <div>
     <h2>Parent Media</h2>
-    <!-- Отображение информации о родительском медиафайле -->
+    <div>
+        <p>Type: <span th:text="${parentFile.fileType}"></span></p>
+        <p>URL: <span th:text="${parentFile.fileUrl}"></span></p>
+        <!-- Дополнительная информация о родительском медиафайле -->
+    </div>
+</div>
+<div sec:authorize="isAuthenticated()">
+    <!-- Отображается, если пользователь аутентифицирован -->
+    Welcome back, <span sec:authentication="name">User</span>!
+    <a href="/logout">Logout</a>
+</div>
+<div sec:authorize="!isAuthenticated()">
+    <!-- Отображается, если пользователь не аутентифицирован -->
+    <a href="/login">Login</a>
 </div>
 <div>
     <h2>Child Media Files</h2>
     <div th:each="file : ${childFiles}">
-        <!-- Отображение информации о каждом дочернем медиафайле -->
+        <div th:switch="${pictureService.getMediaType(file.fileType)} ">
+            <img th:case="'image'" class="media"
+                 th:src="@{'data:image/png;base64,' + ${pictureService.encodeBase64(file.fileData)}}"
+                 onclick="toggleSize(this)"/>
+            <video th:case="'video'" class="media" controls onclick="toggleSize(this)">
+                <source th:src="@{'data:video/mp4;base64,' + ${pictureService.encodeBase64(file.fileData)}}"/>
+            </video>
+        </div>
+        <!-- Дополнительная информация о каждом дочернем медиафайле -->
     </div>
 </div>
+<input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/stomp-websocket/lib/stomp.min.js"></script>
+<script type="text/javascript" th:src="@{/script.js}"></script>
 </body>
 </html>

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.w3.org/1999/xhtml">
 <head>
     <title>Picture Gallery</title>
     <link th:href="@{/style.css}" rel="stylesheet"/>
@@ -13,6 +13,15 @@
     <option value="40" th:selected="${selectedSize == 40}">40</option>
     <option value="50" th:selected="${selectedSize == 50}">50</option>
 </select>
+<div sec:authorize="isAuthenticated()">
+    <!-- Отображается, если пользователь аутентифицирован -->
+    Welcome back, <span sec:authentication="name">User</span>!
+    <a href="/logout">Logout</a>
+</div>
+<div sec:authorize="!isAuthenticated()">
+    <!-- Отображается, если пользователь не аутентифицирован -->
+    <a href="/login">Login</a>
+</div>
 <div class="pagination-wrapper">
     <a th:href="@{/pictures(page=${mediaFilesPage.number - 1}, size=${selectedSize})}"
        th:unless="${mediaFilesPage.first}" class="navigation-link">Previous</a>
@@ -44,9 +53,8 @@
             <button th:if="${!mediaFile.isThreadDownloaded}" th:data-fileurl="${mediaFile.fileUrl}"
                     class="form-thread-btn button-spacing">Сформировать тред
             </button>
-            <button th:if="${mediaFile.isThreadDownloaded}" th:href="@{'/pictures/thread/' + ${mediaFile.fileUrl}}"
-                    class="enter-thread-btn button-spacing">Зайти в тред
-            </button>
+            <a th:if="${mediaFile.isThreadDownloaded}" th:href="@{'/pictures/thread/' + ${mediaFile.fileUrl}}"
+               class="enter-thread-btn button-spacing">Зайти в тред</a>
         </div>
     </div>
 </div>
@@ -66,6 +74,7 @@
 <script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/stomp-websocket/lib/stomp.min.js"></script>
 <script type="text/javascript" th:src="@{/script.js}"></script>
+<input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
 </body>
 </html>
 

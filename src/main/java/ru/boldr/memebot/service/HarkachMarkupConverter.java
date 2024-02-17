@@ -30,8 +30,9 @@ public class HarkachMarkupConverter {
             }
 
             var toReplace = String.copyValueOf(content.toCharArray(), 16, content.length() - 23);
-            result = result.replaceFirst("<span class=\"u\">(" + toReplace + ")?</span>",
-                    "<u>" + toReplace +"</u>");
+            var search = "<span class=\"u\">" + toReplace + "</span>";
+            var replacement = "<u>" + toReplace + "</u>";
+            result = result.replace(search, replacement);
         }
 
         if (regex.matcher(result).find()) {

@@ -131,5 +131,13 @@ public class MediaFileService {
         return mediaFileRepository.findAllByParentIdIn(parentIds);
     }
 
+    public Collection<MediaFileDto> findMediaDtoByParentIdIn(List<Long> id) {
+        Collection<MediaFile> allByParentIdIn = mediaFileRepository.findAllByParentIdIn(id);
+        try {
+            return fileReadWriteService.readFiles(allByParentIdIn);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }
 
