@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <meta charset="UTF-8">
+    <title>Torrent Viewer</title>
+    <style>
+        /* Стили для уменьшения размера изображений */
+        .thumbnail {
+            max-width: 700px; /* Максимальная ширина изображения */
+            max-height: 700px; /* Максимальная высота изображения */
+        }
+    </style>
+</head>
+<body>
+<h1>Torrent Links</h1>
+<form id="searchForm">
+    <input type="text" id="tagsInput" placeholder="Enter tags separated by commas"/>
+    <button type="button" onclick="loadTorrentLinks()">Search</button>
+</form>
+<table id="torrentTable">
+    <thead>
+    <tr>
+        <th>Title</th>
+        <th>Download</th>
+        <th>Image</th>
+    </tr>
+    </thead>
+    <tbody id="torrentLinks"></tbody>
+</table>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    function loadTorrentLinks() {
+        const tags = document.getElementById('tagsInput').value;
+        const encodedTags = encodeURIComponent(tags);
+        const eventSource = new EventSource(`/api/torrents/search?tags=${encodedTags}`);
+
+        eventSource.onmessage = function(event) {
+            const link = JSON.parse(event.data);
+            const tableBody = document.getElementById('torrentLinks');
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${link.title}</td>
+                <td><a href="${link.downloadLink}" target="_blank">Download</a></td>
+                <td><a href="${link.pageUrl}" target="_blank">goToPage</a></td>
+                <td><img class="thumbnail" src="${link.imageUrl}" alt="${link.title}"></td>`;
+            tableBody.appendChild(row);
+        };
+
+        eventSource.onerror = function(error) {
+            console.error('EventSource failed:', error);
+            eventSource.close();
+        };
+    }
+    /*]]>*/
+</script>
+</body>
+</html>

@@ -23,22 +23,24 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        return http.authorizeRequests()
-                .antMatchers("/thread/**").hasRole("USER")
-                .antMatchers("/", "/**").permitAll()
-                .and()
-                .formLogin()
-                .loginPage("/login")
-                .defaultSuccessUrl("/pictures", true)
-                .permitAll()
-                .and()
-                .oauth2Login()
-                .loginPage("/login")
-                .and()
-                .logout()
-                .permitAll()
-                .and()
-                .build();
+//        return http.authorizeRequests()
+//                .antMatchers("/thread/**").hasRole("USER")
+//                .antMatchers("**/graphiql/**").permitAll()
+//                .antMatchers("/", "/**").permitAll()
+//                .and()
+//                .formLogin()
+//                .loginPage("/login")
+//                .defaultSuccessUrl("/pictures", true)
+//                .permitAll()
+//                .and()
+//                .oauth2Login()
+//                .loginPage("/login")
+//                .and()
+//                .logout()
+//                .permitAll()
+//                .and()
+//                .build();
+        return http.authorizeRequests().anyRequest().permitAll().and().csrf().disable().build();
     }
 
     @Bean

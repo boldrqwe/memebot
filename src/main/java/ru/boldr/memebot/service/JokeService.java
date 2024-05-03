@@ -2,15 +2,13 @@ package ru.boldr.memebot.service;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import one.util.streamex.StreamEx;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.objects.Message;
-import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.api.objects.User;
 import ru.boldr.memebot.model.entity.ChatPermission;
 import ru.boldr.memebot.repository.ChatPermissionRepo;
 
-import java.util.*;
+import java.util.Optional;
+import java.util.Set;
 
 @Service
 @AllArgsConstructor
@@ -31,6 +29,7 @@ public class JokeService {
         ChatPermission chatPermission = optionalChatPermission.get();
 
         return chatPermission.getPermission();
+
     }
 
     public void savePermission(Message message, boolean permission) {

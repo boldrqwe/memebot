@@ -42,7 +42,7 @@ public class MediaFile {
     @Nullable
     private Long parentId;
 
-    @OneToMany(fetch = FetchType.LAZY)
+    @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "parentId")
     List<MediaFile> childFiles = new ArrayList<>();
 

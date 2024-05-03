@@ -1,0 +1,20 @@
+type MediaFile {
+    id: ID!
+    filePath: String
+    fileType: String
+    comment: String
+    isTreadDownloaded: Boolean
+    parentId: ID
+    childFiles: [MediaFile]
+    fileUrl: String
+    createdAt: String
+}
+
+type Query {
+    mediaFiles: [MediaFile]
+    mediaFileById(id: ID!): MediaFile
+}
+
+type Mutation {
+    createMediaFile(filePath: String!, fileType: String!, comment: String, isTreadDownloaded: Boolean, parentId: ID, fileUrl: String, createdAt: String): MediaFile
+}

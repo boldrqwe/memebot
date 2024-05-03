@@ -13,6 +13,7 @@ public class RegistrationForm {
     private String phoneNumber;
 
     public UserDetail toUser(PasswordEncoder passwordEncoder) {
-        return new UserDetail(null, username, passwordEncoder.encode(password), phoneNumber);
+        return new UserDetail(null, username,
+                passwordEncoder.encode(password), phoneNumber);
     }
 }
